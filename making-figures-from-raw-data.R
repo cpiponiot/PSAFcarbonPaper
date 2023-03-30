@@ -29,10 +29,10 @@ source("script-agb.R")
 
 # open organic carbon data
 # bulk density in Gariuai according to SoilGrids = 125 cg/cm3
-data_soil <- readxl::read_excel("RESUME_DATA_SOIL_SHORT_TL.xls", sheet = "RESUME-LAB ")
+data_soil <- readxl::read_excel("data/RESUME_DATA_SOIL_SHORT_TL.xls", sheet = "RESUME-LAB ")
 
 # add bulk density and coars fraction
-data_soil2 <- readxl::read_excel("RAW_DATA_SOIL_LARGE_TL.xls", sheet = "SAMPLING_MEASURE")
+data_soil2 <- readxl::read_excel("data/RAW_DATA_SOIL_LARGE_TL.xls", sheet = "SAMPLING_MEASURE")
 
 # bulk density from direct measurements
 data_soil2$BD <- data_soil2$Sample_DRY/data_soil2$V_cylinder
@@ -65,7 +65,21 @@ data_soil$BDptf <-
       (100 - data_soil$OM)/data_soil$BDmin
   )
 
-ggplot(data_soil, aes(x = BD, y = BDmin, color = SAMPLE_DEPTH)) + geom_abline(slope = 1, intercept = 0, lty=2) + geom_point()
+g1 = ggplot(data_soil, aes(x = BD, y = BDptf, color = ID_TYPE)) + 
+  geom_abline(slope = 1, intercept = 0, lty=2) + 
+  geom_point() + 
+  lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
+  facet_wrap(~ID_VILLAGE)
+#+
+  # theme(legend.position = "none")
+g2 = ggplot(data_soil, aes(x = BD, y = BDmin, color = SAMPLE_DEPTH)) +
+  geom_abline(slope = 1, intercept = 0, lty=2) + 
+  geom_point() + 
+  lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
+  theme(legend.position = c(0.2, 0.8))
+
+ggpubr::ggarrange(g1, g2) 
+ggsave("figures/pedotransfer-test.png", height = 5, width = 10)
 
 ggplot(data_soil, aes(x = SAMPLE_DEPTH, y = BDmin, group = N_PLOT)) + 
   geom_line() + 
@@ -100,7 +114,7 @@ data_soil[, Cstock :=          ## in Mg/ha
             1e-6               ## convert from g/ha to Mg/ha
 ]
 
-data_soil_C <- data_soil[, .(meanSC = sum(Cstock)), .(N_PLOT)]
+data_soil_C <- data_soil[, .(meanSC = sum(Cstock), clay = mean(as.numeric(CLAY), na.rm = TRUE)), .(N_PLOT)]
 
 ## error propagation using a Monte Carlo method -------------
 data_soil_unc = data_soil[, .(BD = rnorm(1000, BD, BD*0.1), 
@@ -139,6 +153,12 @@ dataC_mean <- dataC[, .(AGC_mean = mean(meanAGC), SC_mean = mean(meanSC),
                         AGC_se = sd(meanAGC)/sqrt(length(meanAGC)), 
                         SC_se = sd(meanSC)/sqrt(length(meanSC))), .(ID_AF)]
 
+# stat tests
+summary(lme4::lmer(meanSC ~ meanAGC + clay + (meanAGC | village), data = dataC))
+
+summary(aov(meanAGC ~ ID_AF + village, data = dataC))
+summary(aov(meanSC ~ ID_AF + clay + village, data = dataC))
+
 # regression coefficients
 dataC_reg <- dataC[, .(intercept = summary(lm(meanSC ~ meanAGC))$coefficients[1,1], 
                        slope = summary(lm(meanSC ~ meanAGC))$coefficients[2,1], 
@@ -155,7 +175,7 @@ ggplot(dataC, aes(color = ID_AF)) +
   scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
   scale_linetype_manual(values=c("twodash", "dotted"))+
   theme_classic() 
-ggsave("fig-scatterplot-carbon.png", height = 5, width = 7)
+ggsave("figures/fig-scatterplot-carbon.png", height = 5, width = 7)
 
 ## melt data.table
 dataC <- melt(dataC, id.vars = c("N_PLOT", "ID_VILLAGE", "ID_AF", "village"), 
@@ -171,6 +191,8 @@ dataC_all <- dataC[, .(value = mean(value)), .(village, ID_AF, variable)]
 dataC_all$ID_AF <- factor(dataC_all$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
 
 # uncertainty fig 2: bootstrap by MC iteration?
+dataC_all[, variable := factor(variable, levels = c("meanAGC", "meanBGC", "meanSC"))]
+levels(dataC_all$variable) <- c("AGC", "BGC", "SOC")
 
 ## figure 
 ggplot(dataC_all, aes(x = village, y = value, fill = variable)) +
@@ -181,6 +203,49 @@ ggplot(dataC_all, aes(x = village, y = value, fill = variable)) +
   theme(strip.placement = "outside") +
   labs(x = "", y = "Carbon stocks (Mg C/ha)", fill = "Carbon\npool") +
   scale_y_continuous(expand = c(0, 0))
-ggsave("fig-carbon-stocks-stack.png", height = 5, width = 8)
+ggsave("figures/fig-carbon-stocks-stack.png", height = 5, width = 8)
 
 
+
+
+## diagnostic données sol pour marguerite
+g1 <- ggplot(data_soil, aes(x = CF*100, col = SAMPLE_DEPTH)) + 
+  geom_histogram(bins = 30) +
+  geom_text(data = subset(data_soil, CF > 0.3), angle = -60, 
+            aes(x = CF*100-5, y = 15, 
+                label = paste("Village:", ID_VILLAGE, "/ SAF:", ID_TYPE, "/ Plot:", N_PLOT))) +
+  labs(x = "Elements grossiers (% du volume)", 
+       y = "Nombre d'échantillons (site x profondeur)", 
+       col = "Profondeur (cm)") + 
+  scale_y_continuous(expand = expand_scale(0, 0)) +
+  theme_classic()  +
+  theme(legend.position = c(0.8, 0.9))
+
+g2 <- ggplot(data_soil, aes(x = Corg, col = SAMPLE_DEPTH)) + 
+  geom_histogram(bins = 20) +
+  labs(x = "Teneur en carbone (%)", 
+       y = "Nombre d'échantillons (site x profondeur)", 
+       col = "Profondeur (cm)") + 
+  scale_y_continuous(expand = expand_scale(0, 0)) +
+  theme_classic() +
+  theme(legend.position = c(0.8, 0.9))
+
+g3 <- ggplot(data_soil, aes(x = BD, col = SAMPLE_DEPTH)) + 
+  geom_histogram(bins = 20) +
+  labs(x = "Densité apparente", 
+       y = "Nombre d'échantillons (site x profondeur)", 
+       col = "Profondeur (cm)") + 
+  scale_y_continuous(expand = expand_scale(0, 0)) +
+  theme_classic()+
+  theme(legend.position = c(0.8, 0.9))
+
+ggpubr::ggarrange(g1, g2, g3, labels = "auto", nrow = 1)
+ggsave("figures/fig-distr-sol.pdf", height = 5, width = 15)
+
+
+ggplot(data_soil, aes(x = as.numeric(CLAY), y = Corg, col = SAMPLE_DEPTH)) +
+  geom_point() +
+  labs(col = "Profondeur (cm)", x = "Argile (%)", y = "Teneur en carbone (%)") + 
+  geom_smooth(method = "lm") +
+  theme_classic()
+ggsave("figures/fig-clay-corg.pdf", height = 4, width = 6)

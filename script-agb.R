@@ -26,13 +26,13 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ## 2. Load data from excel file ####
 
 # Open large tree data (> 100 cm circumference)
-data_large <- readxl::read_excel("DATA_BIOMASS_TL_SHORT.xlsx", "TREE INV >100CM")
+data_large <- readxl::read_excel("data/DATA_BIOMASS_TL_SHORT.xlsx", "TREE INV >100CM")
 
 # Open large tree data (30-100 cm circumference)
-data_small <- readxl::read_excel("DATA_BIOMASS_TL_SHORT.xlsx", "TREE INV 30-100CM")
+data_small <- readxl::read_excel("data/DATA_BIOMASS_TL_SHORT.xlsx", "TREE INV 30-100CM")
 
 # Open plot information
-data_plot <- readxl::read_excel("DATA_BIOMASS_TL_SHORT.xlsx", "PLOT_GENERAL_INFO")
+data_plot <- readxl::read_excel("data/DATA_BIOMASS_TL_SHORT.xlsx", "PLOT_GENERAL_INFO")
 
 
 ## 3. combine tables ####
