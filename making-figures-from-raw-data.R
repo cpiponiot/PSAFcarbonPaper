@@ -68,6 +68,7 @@ data_soil$BDptf <-
 g1 = ggplot(data_soil, aes(x = BD, y = BDptf, color = ID_TYPE)) + 
   geom_abline(slope = 1, intercept = 0, lty=2) + 
   geom_point() + 
+  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
   lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
   facet_wrap(~ID_VILLAGE)
 #+
@@ -75,6 +76,7 @@ g1 = ggplot(data_soil, aes(x = BD, y = BDptf, color = ID_TYPE)) +
 g2 = ggplot(data_soil, aes(x = BD, y = BDmin, color = SAMPLE_DEPTH)) +
   geom_abline(slope = 1, intercept = 0, lty=2) + 
   geom_point() + 
+  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
   lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
   theme(legend.position = c(0.2, 0.8))
 
@@ -169,11 +171,12 @@ ggplot(dataC, aes(color = ID_AF)) +
   geom_point(aes(x = meanAGC, y = meanSC, shape = village), size = 2) + 
   geom_linerange(aes(x = meanAGC, y = meanSC, ymin = lwrSC, ymax = uprSC)) +
   geom_errorbarh(aes(y = meanSC, xmin = lwrAGC, xmax = uprAGC)) +
-  geom_abline(data = dataC_reg, aes(intercept = intercept, slope = slope, lty = village)) +
+  # geom_abline(data = dataC_reg, aes(intercept = intercept, slope = slope, lty = village)) +
   labs(color = "AF system", x = "Aboveground C (Mg C/ha)", y = "Soil C (Mg C/ha)") + 
   expand_limits(x = 0, y = 0) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
   scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
-  scale_linetype_manual(values=c("twodash", "dotted"))+
+  # scale_linetype_manual(values=c("twodash", "dotted"))+
   theme_classic() 
 ggsave("figures/fig-scatterplot-carbon.png", height = 5, width = 7)
 
@@ -193,6 +196,12 @@ dataC_all$ID_AF <- factor(dataC_all$ID_AF, levels = c("CF", "SP", "YA", "HG", "F
 # uncertainty fig 2: bootstrap by MC iteration?
 dataC_all[, variable := factor(variable, levels = c("meanAGC", "meanBGC", "meanSC"))]
 levels(dataC_all$variable) <- c("AGC", "BGC", "SOC")
+
+## add forest data
+dataC_all = rbind(dataC_all, 
+                  data.frame(village = "", ID_AF = "Forest", variable = c("AGC", "SOC"), value = c(157, 122)))
+
+## add 10.1088/1748-9326/aaeb5f > AF systems
 
 ## figure 
 ggplot(dataC_all, aes(x = village, y = value, fill = variable)) +
