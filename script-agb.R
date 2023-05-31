@@ -139,11 +139,71 @@ data_palm[, AGC := WD * H * (DBH/2)^2 * pi *
             1e-6  # convert from g to tons
 ]
 
-# group palm AGC etsimation with others
+# group palm AGC estimation with others
 data_tot <- rbind(data_sim[!GENUS %in% palm_genera], 
                   data_palm[, colnames(data_sim), with=FALSE])
 
-## 7. estimate plot AGB ####
+
+## 7. add belowground biomass estimation
+
+# root-to-shoot ratio allometry from Ledo et al., 2017
+# no associated uncertainty? 
+
+# get cwd from CHELSA 
+
+if (!file.exists("data/CWD_CHELSA.tif")) {
+  
+  urls <- paste0(
+    "https://os.zhdk.cloud.switch.ch/envicloud/chelsa/chelsa_V2/GLOBAL/climatologies/1981-2010/",
+    rep(c("pet/CHELSA_pet_penman_", "pr/CHELSA_pr_"), each = 12),
+    rep(paste0(c(rep(0,9), rep("", 3)), 1:12), 2),
+    "_1981-2010_V.2.1.tif"
+  )
+  
+  if (!dir.exists("CHELSA")) dir.create("CHELSA")
+  
+  destfiles <- paste0("CHELSA/", data.table::tstrsplit(urls, "\\/")[[11]])
+  
+  for (i in seq_len(length(urls))) {
+    if (!file.exists(destfiles[i]))
+      utils::download.file(urls[i], destfiles[i], method = "curl")
+  }
+  
+  # create CWD raster of Timor Lests
+  pr <- terra::crop(terra::rast(grep("_pr_", destfiles, value = TRUE)), raster::extent(c(120, 130, -11, -6)))
+  pet <- terra::crop(terra::rast(grep("_pet_", destfiles, value = TRUE)), raster::extent(c(120, 130, -11, -6)))
+  
+  cwd = sum(pr,  - pet)
+  cwd[cwd > 0] = 0
+  cwd = sum(cwd)
+  
+  terra::writeRaster(cwd, file = "data/CWD_CHELSA.tif", overwrite = TRUE)
+  
+}
+
+# download cwd from Chave et al 2014
+if (!file.exists("data/CWD.tif")) {
+  utils::download.file("http://chave.ups-tlse.fr/pantropical_allometry/CWD.tif.zip", "data/CWD.tif.zip", method = "curl")
+  utils::unzip("data/CWD.tif.zip", exdir = "data", overwrite = TRUE)
+}
+
+cwdMap = terra::rast("data/CWD.tif")
+data_coord <- read.csv("data/coords-timor.csv")
+data.table::setDT(data_coord)
+
+## change this
+data_coord$CWD <- terra::extract(cwdMap, data_coord[, c("LONG", "LAT")])$CWD
+data_coord[, N_PLOT := as.numeric(data.table::tstrsplit(N_Q_ID, "_")[[1]])]
+
+data_cwd <- data_coord[, .(CWD = mean(CWD)), .(N_PLOT)]
+
+data_tot <- merge(data_tot, data_cwd, by = "N_PLOT", all.x = TRUE)
+
+data_tot$RS = exp(- 1.2312 - 0.0215 * data_tot$DIAM_130_CM + 0.0002 *  data_tot$DIAM_130_CM^2 - 0.0007 * data_tot$CWD)
+data_tot$BGC  = data_tot$RS * data_tot$AGC
+
+
+## 8. estimate plot AGB and BGB ####
 
 # get plot area
 data_tot[, AREA := ifelse(ARTIFICIAL_PLOT, 1, AREA_TOTAL_PARCEL)]
@@ -155,12 +215,16 @@ data_tot[, TYPE := ifelse(grepl("Q", data_tot$N_Q_ID), "QUADRAT", "TOTAL")]
 data_tot[TYPE == "QUADRAT", AREA := 0.05]
 
 # sum AGB of trees in each plot and quadrat, and standardize by area (to Mg/ha)
-data_agb <- data_tot[, .(AGC = sum(AGC/AREA)), .(N_PLOT, ID_VILLAGE, ID_AF, iter)]
+data_agb <- data_tot[, .(AGC = sum(AGC/AREA), BGC = sum(BGC/AREA)), .(N_PLOT, ID_VILLAGE, ID_AF, iter)]
 
 data_agb <- data_agb[, .(meanAGC = mean(AGC), 
                          lwrAGC = quantile(AGC, 0.025), 
-                         uprAGC = quantile(AGC, 0.975)), 
+                         uprAGC = quantile(AGC, 0.975), 
+                         meanBGC = mean(BGC), 
+                         lwrBGC = quantile(BGC, 0.025), 
+                         uprBGC = quantile(BGC, 0.975)), 
                      .(N_PLOT, ID_VILLAGE, ID_AF)]
+
 
 ## optional: graphs ####
 
