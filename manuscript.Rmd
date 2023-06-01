@@ -1,0 +1,476 @@
+---
+title: "Traditional agroforestry systems in Timor-Leste can store large amounts of carbon in both soil and biomass"
+author: "Marguerite Cogné, Régis Peltier, Vincent Freycon, Alexis Toumazeau, Camille Piponiot"
+date: "2023-05-10"
+output: 
+  bookdown::word_document2:
+  fig_caption: yes
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "hide", tinytex.clean = FALSE)
+packages_needed = c("ggplot2", "dataverse", "readxl", "data.table")
+
+packages_to_install = packages_needed[!( packages_needed %in% rownames(installed.packages()))]
+
+if (length(packages_to_install) > 0)
+  install.packages(packages_to_install)
+
+lapply(packages_needed, require, character.only = TRUE)
+```
+
+# Introduction
+
+Agricultural expansion has been the main driver of tropical deforestation over the past half century [@Pendrill2022;@Gibbs2010;@Rudel2009], resulting in large greenhouse gas emissions [approximately 2.6 gigatonnes CO_2_e/yr over 2010-2014; @Pendrill2019]. The demand for tropical agricultural land is expected to continue to increase in the tropics as the population grows [@UN2022]. In addition, tropical areas are expected to be disproportionately affected by deforestation and climate change, putting their agriculture at risk [@Lawrence2015]. There is therefore an urgent need to promote tropical agricultural landscapes that are both more resilient to climate change, while maintaining high productivity and ecological value [@Harvey2014]. In particular, increasing the carbon stored in the soil and vegetation of agricultural landscapes could be an effective way to mitigate climate change while increasing the resilience of the food production system [@Lal2004].
+
+Agroforestry has attracted attention in recent decades as a set of effective agricultural practices that could contribute to climate change mitigation and adaptation [@Verchot2007]. Agroforestry is a collective name for land use systems and technologies where woody perennials (trees, shrubs, palms, bamboo, etc.) are deliberately used on the same land management units as agricultural crops and/or animals, in some form of spatial arrangement or temporal sequence [@Lundgren1982]. Agroforestry allows for diversification of agricultural production, making agricultural systems more resilient [@Duffy2021]; it also increases the carbon sequestration in the vegetation but also in the soil [@DeStefano2018].  
+
+
+Carbon stocks in AFS [VF]
+
+Importance of the ecological/social context in the success of agroforestry techniques - existence of traditional agroforestry techniques that could be more adapted to local conditions, [MC]
+Agroforestry needs to be adapted to the context [(Coe et al., 2014, Cur Opinion in Env Sust) @Coe2014]
+
+Existence of traditional agroforestry systems [examples from Marguerite’s intro]
+
+Context in Timor Leste: current knowledge on their agroforestry practices + knowledge gap [MC]
+
+Local typology of production systems and why it is not adapted to traditional agroforestry
+
+No prior description of traditional agroforestry systems in TL
+
+In Timor Leste, a typology of production systems taking into account different agroecological zoning was carried out in 2017 based on the results of the 2010 national census (R. Williams et al, 2018). However, this typology does not highlight the agroforestry component of Timorese agriculture by focusing on other differentiating criteria such as livestock, subsistence crops (rice) or the island's historical cash crops (coconut, coffee).
+
+Need to better understand how these systems work and quantify their carbon storage to include them in climate change mitigation policies 
+Research questions  [VF]
+
+What are the characteristics of traditional agroforestry systems in Timor Leste? 
+
+How much carbon do they store in both their biomass and in the soil
+
+Are there measurable differences between AFS?
+
+Hypotheses [VF]
+
+Proposition: lien entre typologie et stocks de carbone
+
+# Materials and methods
+
+```{r download-data}
+## download data from dataverse - once published
+dataverse_url <- "https://dataverse.cirad.fr/privateurl.xhtml?token=f8eabb2a-3635-499b-aee5-80fd2b7495a0"
+dataverse_doi <- "10.18167/DVN1/QCXWIY"
+
+# for now : download manually from temporary link
+# utils::unzip("dataverse_files.zip")
+``` 
+
+```{r agb-calculation}
+# get agb data
+source("script-agb.R")
+```
+
+```{r open-soil-data}
+# open organic carbon data
+# bulk density in Gariuai according to SoilGrids = 125 cg/cm3
+data_soil <- readxl::read_excel("data/RESUME_DATA_SOIL_SHORT_TL.xls", sheet = "RESUME-LAB ")
+
+# add bulk density and coarse fraction
+data_soil2 <- readxl::read_excel("data/RAW_DATA_SOIL_LARGE_TL.xls", sheet = "SAMPLING_MEASURE")
+
+# bulk density from direct measurements
+data_soil2$BD <- data_soil2$Sample_DRY/data_soil2$V_cylinder
+
+# coarse fraction
+data_soil2$CF <- data_soil2$V_rocks_tot/data_soil2$V_cylinder
+
+# change format of depth to correspond to other soil table
+data_soil2$SAMPLE_DEPTH <- factor(data_soil2$DEPTH_SAMPLE_C, levels = c("2_7", "12_17", "22_27"))
+levels(data_soil2$SAMPLE_DEPTH) <- c("0-10", "10-20", "20-30")
+
+data_soil <- merge(data_soil, data_soil2, by = c("N_PLOT", "SAMPLE_DEPTH"), all=TRUE)
+data.table::setDT(data_soil)
+```
+
+```{r test-bd-pedotransfer}
+# bulk density from pedotransfer function: Minasny and Hartemink, 2011
+
+data_soil$depth_mean <- unlist(lapply(strsplit(data_soil$SAMPLE_DEPTH, "-"), function(x) mean(as.numeric(x))))
+data_soil$depth_max <- unlist(lapply(strsplit(data_soil$SAMPLE_DEPTH, "-"), function(x) as.numeric(x[2])))
+
+data_soil$sand <- as.numeric(data_soil$`FINE SAND`) + as.numeric(data_soil$`COARSE SAND`)/100
+
+data_soil$BDmin <- 
+  0.935 + 
+  0.049 * log(data_soil$depth_mean) + 
+  0.0055 * data_soil$sand + 
+  0.000065 * (data_soil$sand - 38.96)^2
+
+data_soil$BDptf <- 
+  100/(
+    data_soil$OM/0.224 + 
+      (100 - data_soil$OM)/data_soil$BDmin
+  )
+
+# g1 = ggplot(data_soil, aes(x = BD, y = BDptf, color = ID_TYPE)) + 
+#   geom_abline(slope = 1, intercept = 0, lty=2) + 
+#   geom_point() + 
+#   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
+#   lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
+#   facet_wrap(~ID_VILLAGE)
+# #+
+#   # theme(legend.position = "none")
+# g2 = ggplot(data_soil, aes(x = BD, y = BDmin, color = SAMPLE_DEPTH)) +
+#   geom_abline(slope = 1, intercept = 0, lty=2) + 
+#   geom_point() + 
+#   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
+#   lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
+#   theme(legend.position = c(0.2, 0.8))
+# 
+# ggpubr::ggarrange(g1, g2) 
+# ggsave("figures/pedotransfer-test.png", height = 5, width = 10)
+```
+
+```{r add-missing-values}
+## add intermediate soil carbon in 10-20 cm depth (for now: no value)
+data_soil[, Corg := mean(`Corg\n`, na.rm = TRUE), .(N_PLOT)]
+data_soil[!is.na(`Corg\n`), Corg := `Corg\n`]
+
+# replace one missing value of coarse fraction with plot level mean
+data_soil[, CF_site := mean(CF, na.rm = TRUE), .(N_PLOT)]
+data_soil[is.na(CF), CF := CF_site]
+```
+
+```{r total-soc}
+# calculate total soil carbon stock per depth
+data_soil[, c("h0", "h1") := lapply(data.table::tstrsplit(SAMPLE_DEPTH, "-"), as.numeric)]
+data_soil[, Cstock :=          ## in Mg/ha
+            (h1 - h0) * 1e8 *  ## equivalent volume of a 1 ha soil sample, in cm3/ha
+            BD *               ## bulk density 
+            Corg/100 *         ## carbon organic content in soil
+            (1-CF) *           ## remove coarse fraction
+            1e-6               ## convert from g/ha to Mg/ha
+]
+
+data_soil_C <- data_soil[, .(meanSC = sum(Cstock), clay = mean(as.numeric(CLAY), na.rm = TRUE)), .(N_PLOT)]
+```
+
+```{r soc-error-propagation}
+## error propagation using a Monte Carlo method -------------
+data_soil_unc = data_soil[, .(BD = rnorm(1000, BD, BD*0.1), 
+                              Corg = rnorm(1000, Corg, Corg*0.12), 
+                              CF = rnorm(1000, CF, CF*0.15), 
+                              iter = 1:1000), 
+                          .(N_PLOT, SAMPLE_DEPTH, h1, h0)]
+
+data_soil_unc = data_soil_unc[, .(Cstock = sum(
+  (h1 - h0) * 1e8 *  
+    BD * Corg/100 * (1-CF) * 1e-6  
+)),
+.(N_PLOT, iter)
+]
+
+data_soil_unc = data_soil_unc[, .(
+  lwrSC = quantile(Cstock, 0.025), 
+  uprSC = quantile(Cstock, 0.975)), 
+  .(N_PLOT)]
+```
+
+```{r combine-agb-soc-data}
+# combine AGB and soil C
+dataC <- merge(data_agb, data_soil_C)
+
+# add soil carbon uncertainty
+dataC <- merge(dataC, data_soil_unc)
+
+dataC[, village := substr(ID_VILLAGE, 1, 1)]
+dataC$ID_AF <- factor(dataC$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
+```
+
+# Results
+
+```{r tab-mean, results = "show"}
+# average values per village and SAF type
+dataC_mean <- dataC[, .(AGC = paste0(round(mean(meanAGC), 2), " +/- ", round(sd(meanAGC)/sqrt(length(meanAGC)), 2)), 
+                        SC = paste0(round(mean(meanSC), 2), " +/- ", round(sd(meanSC)/sqrt(length(meanSC)), 2))),
+                        .(ID_AF)]
+dataC_mean$ID_AF <- factor(dataC_mean$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
+dataC_mean = dataC_mean[order(dataC_mean$ID_AF),]
+knitr::kable(dataC_mean, col.names = c("Agroforestry system", "Aboveground carbon (Mg/ha)", "Soil organic carbon (Mg/ha)"))
+write.csv(dataC_mean, file = "tables/C_mean_SAF.csv", row.names = FALSE)
+```
+
+```{r fig-1-map, fig.height =6, fig.width = 7}
+# required packages
+# req_packages <- c("BIOMASS", "readxl", "data.table", "ggmap", "ggplot2")
+
+## 2. Load data from excel file ####
+data_coord <- read_xlsx("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = "GPS")
+data.table::setDT(data_coord)
+
+data_coord[, N_PLOT := as.numeric(data.table::tstrsplit(N_Q_ID, "_")[[1]])]
+
+data_coord <- data_coord[, .(long = mean(as.numeric(LONG)), lat = mean(as.numeric(LAT))), .(N_PLOT)]
+
+data_plot <- readxl::read_excel("data/DATA_BIOMASS_TL_SHORT.xlsx", "PLOT_GENERAL_INFO")
+
+data_plot <- merge(data_coord, data_plot[, c("N_PLOT", "ID_VILLAGE", "ID_AF")])
+
+data_plot[, village := substr(ID_VILLAGE, 1, 1)]
+data_plot[village == "S", village := "Samalari"]
+data_plot[village == "G", village := "Gariuai"]
+
+data_box = data_plot[, .(xc = mean(long), yc = mean(lat)), .(village)]
+data_box[village == "Gariuai", `:=`(w = 0.1, xc = xc + 0.001)]
+data_box[village == "Samalari", w := 0.05]
+data_box[, `:=`(x1 = xc - w/2, x2 = xc + w/2, y1 = yc - w/2, y2 = yc + w/2)]
+
+## create Timor map ####
+
+bbox <- c(124.5, -9.2, 127.5,  -8.3)
+# basemap <- ggmap::get_stamenmap(bbox, maptype = "terrain", zoom = 10)
+
+# geodata::elevation_3s(lon= c(data_box[village == "Samalari"]$x1), 
+#                       lat= c(data_box[village == "Samalari"]$y1), 
+#                       path = "data")
+timor_map <- map_data("world", region = "Timor-Leste")
+
+# get elevation information
+elev = as.data.frame(terra::rast("data/srtm_62_14.tif"), xy = TRUE)
+elevS <- subset(elev, x > data_box[village == "Samalari"]$x1 & 
+                  x < data_box[village == "Samalari"]$x2 & 
+                  y > data_box[village == "Samalari"]$y1 & 
+                  y < data_box[village == "Samalari"]$y2)
+elevG <- subset(elev, x > data_box[village == "Gariuai"]$x1 & 
+                  x < data_box[village == "Gariuai"]$x2 & 
+                  y > data_box[village == "Gariuai"]$y1 & 
+                  y < data_box[village == "Gariuai"]$y2)
+
+# Timor map (fig 1a)
+g1 = ggplot(timor_map) + 
+  # lims(x = c(124.5, 127.5), y = c(-9.2, -8.3)) +
+  #ggmap::ggmap(basemap) +
+  geom_polygon(aes(x = long, y = lat, group = group), fill="lightgray", colour = "grey") +
+  geom_tile(data = data_box, aes(x = xc, y = yc, width = w, height = w), fill = NA, color = 1, linewidth = 0.5) +
+  ggrepel::geom_text_repel(data = data_box, aes(x = xc, y = yc, label = village)) + 
+  labs(x = "", y = "") +
+  theme(legend.position = "top", axis.title = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank(), 
+        panel.background = element_blank())+
+  coord_sf(crs = 'WGS84')
+
+# Gariuai map (fig 1b)
+g2 = ggplot(data = elevG) +
+  geom_raster(aes(x = x, y = y, fill=srtm_62_14)) +
+  geom_point(data = subset(data_plot, village == "Gariuai"), 
+             aes(x = long, y = lat, color = ID_AF), size = 2) + 
+  geom_point(data = subset(data_plot, village == "Gariuai"), 
+             aes(x = long, y = lat), shape = 1, size = 2) + 
+  # coord_equal() +
+  viridis::scale_fill_viridis(option = "D",
+                              limits = range(c(elevS$srtm_62_14, elevG$srtm_62_14))
+  ) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
+  labs(x = "", y = "", title = "Gariuai", color = "", fill="Elevation (m)") +
+  guides(color = FALSE, fill=guide_colorbar(title.position = "top")) + 
+  theme(legend.position = "top", axis.title = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank(), 
+        plot.title = element_text(hjust = 0.5), 
+        panel.background = element_blank()) +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))+
+  ggspatial::annotation_scale() +
+  coord_sf(crs = 'WGS84')
+
+l1 = ggpubr::get_legend(g2)
+
+g2 = g2 + theme(legend.position = "none")
+# 
+# g2 + ggspatial::annotation_scale() +
+#   coord_sf(crs = 'WGS84')
+
+# Samalari map (fig 1c)
+g3 = ggplot(data = elevS) +
+  geom_raster(aes(x = x, y = y, fill=srtm_62_14)) +
+  
+  geom_point(data = subset(data_plot, village == "Samalari"), 
+             aes(x = long, y = lat, color = ID_AF), size = 2) + 
+  geom_point(data = subset(data_plot, village == "Samalari"), 
+             aes(x = long, y = lat), shape = 1, size = 2) + 
+  coord_equal() +
+  labs(x = "", y = "", title = "Samalari", color = "AF\nsystem", fill="Elevation (m)") +
+  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
+  viridis::scale_fill_viridis(option = "D",
+                              limits = range(c(elevS$srtm_62_14, elevG$srtm_62_14)))+
+  guides(color=guide_legend(nrow=2,byrow=TRUE), fill=FALSE) +
+  theme(legend.position = "bottom", axis.title = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank(), 
+        plot.title = element_text(hjust = 0.5), 
+        panel.background = element_blank()) + 
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))+
+  ggspatial::annotation_scale() +
+  coord_sf(crs = 'WGS84')
+
+l2 = ggpubr::get_legend(g3)
+g3 = g3 + theme(legend.position = "none")
+
+
+ggpubr::ggarrange(g1, 
+                  ggpubr::ggarrange(g2, 
+                                    ggpubr::ggarrange(g3, l1, l2, ncol=1, heights = c(4,1,1)), 
+                                    widths = c(4,3), labels = c("b", "c")), 
+                  heights = c(1, 3), nrow = 2, labels = c("a", ""))
+
+
+ggsave("figures/mapPlotsSRTM.png", height =6, width = 7)
+```
+
+
+```{r anova}
+## identify otuliers
+# library(magrittr)
+library(rstatix)
+dataC %>% 
+  group_by(ID_AF) %>%
+  identify_outliers(meanAGC)
+
+dataC %>% 
+  group_by(ID_AF) %>%
+  identify_outliers(meanSC)
+
+# remove extreme outlier and test normality
+dataC[N_PLOT != 11] %>%
+  group_by(ID_AF) %>%
+  shapiro_test(meanAGC)
+
+dataC %>%
+  group_by(ID_AF) %>%
+  shapiro_test(meanSC)
+
+# non parametric kruskal wallis test 
+kruskalAGC = kruskal.test(meanAGC ~ ID_AF,  data = dataC)
+kruskal.test(meanSC ~ ID_AF,  data = dataC)
+kruskal.test(meanAGC ~ village,  data = dataC)
+kruskal.test(meanSC ~ village,  data = dataC)
+
+# pairwise group comparison with Tukey HSD method
+# https://arc.lib.montana.edu/book/statistics-with-r-textbook/item/59
+library(multcomp)
+aovAGC = aov(meanAGC ~ ID_AF, data = dataC[N_PLOT != 11])
+tuk <- glht(aovAGC, linfct = mcp(ID_AF = "Tukey"))
+summary(tuk)          # standard display
+tuk.cld <- cld(tuk)   # letter-based display
+
+plot(tuk.cld)
+
+
+# soc
+aovSOC = aov(meanSC ~ ID_AF, data = dataC)
+tuk <- glht(aovSOC, linfct = mcp(ID_AF = "Tukey"))
+summary(tuk)          # standard display
+tuk.cld <- cld(tuk)   # letter-based display
+
+opar <- par(mai=c(1,1,1.5,1))
+plot(tuk.cld)
+```
+
+```{r fig-2-barplot, fig.height = 5, fig.width = 6}
+## melt data.table
+dataC_all <- melt(dataC, id.vars = c("N_PLOT", "ID_VILLAGE", "ID_AF", "village"), 
+              measure.vars = c("meanAGC", "meanBGC", "meanSC"))
+
+dataC_all <- dataC_all[, .(value = mean(value)), .(village, ID_AF, variable)]
+
+## reorder factors 
+
+dataC_all$ID_AF <- factor(dataC_all$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
+
+# uncertainty fig 2: bootstrap by MC iteration?
+
+dataC_all[, variable := factor(variable, levels = c("meanAGC", "meanBGC", "meanSC"))]
+levels(dataC_all$variable) <- c("AGC", "BGC", "SOC")
+
+ggplot(dataC_all, aes(x = ID_AF, y = value, fill = variable)) +
+  geom_bar(position="stack", stat="identity") + 
+  facet_wrap(~village, nrow = 1, strip.position = "bottom") +
+  scale_fill_manual(values = c("forestgreen", "darkgoldenrod1", "coral4")) +
+  theme_classic() +
+  theme(strip.placement = "outside") +
+  labs(x = "", y = "Carbon stocks (Mg C/ha)", fill = "Carbon\npool") +
+  scale_y_continuous(expand = c(0, 0))
+ggsave("figures/fig-carbon-stocks-stack.png", height = 5, width = 6)
+```
+
+```{r fig-3-reg, fig.height = 5, fig.width = 7}
+## mixed effect linear regression
+lmeReg <- lmerTest::lmer(meanSC ~ meanAGC + (1|village), data = dataC)
+# Nakagawa’s R2 for mixed models
+R2 = performance::r2_nakagawa(lmeReg)
+  
+## figure
+ggplot(dataC, aes(color = ID_AF)) +
+  geom_point(aes(x = meanAGC, y = meanSC, shape = village), size = 2) + 
+  annotate(geom= "text", x = Inf, y = Inf, hjust = 1, vjust = 1, parse = TRUE,
+           label = paste0("R^{2}*' (marg.) = '*", round(R2$R2_marginal, 3))) +
+  annotate(geom= "text", x = Inf, y = Inf, hjust = 1, vjust = 2, parse = TRUE,
+           label = paste0("R^{2}*' (cond.) = '*", round(R2$R2_conditional, 3))) +
+  geom_linerange(aes(x = meanAGC, y = meanSC, ymin = lwrSC, ymax = uprSC)) +
+  geom_errorbarh(aes(y = meanSC, xmin = lwrAGC, xmax = uprAGC)) +
+  geom_abline(intercept = summary(lmeReg)$coefficients[1,1], slope = summary(lmeReg)$coefficients[2,1], lty = 2) +
+  labs(color = "AF system", x = "Aboveground C (Mg C/ha)", y = "Soil C (Mg C/ha)") + 
+  expand_limits(x = 0, y = 0) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  # scale_linetype_manual(values=c("twodash", "dotted"))+
+  theme_classic() 
+ggsave("figures/fig-scatterplot-carbon.png", height = 5, width = 7)
+```
+
+# Supplementary material 
+
+```{r fig-distr-sol, fig.height = 5, fig.width = 15}
+## diagnostic données sol pour marguerite
+g1 <- ggplot(data_soil, aes(x = CF*100, col = SAMPLE_DEPTH)) + 
+  geom_histogram(bins = 30) +
+  geom_text(data = subset(data_soil, CF > 0.3), angle = -60, 
+            aes(x = CF*100-5, y = 15, 
+                label = paste("Village:", ID_VILLAGE, "/ SAF:", ID_TYPE, "/ Plot:", N_PLOT))) +
+  labs(x = "Elements grossiers (% du volume)", 
+       y = "Nombre d'échantillons (site x profondeur)", 
+       col = "Profondeur (cm)") + 
+  scale_y_continuous(expand = expand_scale(0, 0)) +
+  theme_classic()  +
+  theme(legend.position = c(0.8, 0.9))
+
+g2 <- ggplot(data_soil, aes(x = Corg, col = SAMPLE_DEPTH)) + 
+  geom_histogram(bins = 20) +
+  labs(x = "Teneur en carbone (%)", 
+       y = "Nombre d'échantillons (site x profondeur)", 
+       col = "Profondeur (cm)") + 
+  scale_y_continuous(expand = expand_scale(0, 0)) +
+  theme_classic() +
+  theme(legend.position = c(0.8, 0.9))
+
+g3 <- ggplot(data_soil, aes(x = BD, col = SAMPLE_DEPTH)) + 
+  geom_histogram(bins = 20) +
+  labs(x = "Densité apparente", 
+       y = "Nombre d'échantillons (site x profondeur)", 
+       col = "Profondeur (cm)") + 
+  scale_y_continuous(expand = expand_scale(0, 0)) +
+  theme_classic()+
+  theme(legend.position = c(0.8, 0.9))
+
+ggpubr::ggarrange(g1, g2, g3, labels = "auto", nrow = 1)
+ggsave("figures/fig-distr-sol.pdf", height = 5, width = 15)
+```
+
+```{r fig-clay-corg, fig.height = 4, fig.width = 6}
+ggplot(data_soil, aes(x = as.numeric(CLAY), y = Corg, col = SAMPLE_DEPTH)) +
+  geom_point() +
+  labs(col = "Profondeur (cm)", x = "Argile (%)", y = "Teneur en carbone (%)") + 
+  geom_smooth(method = "lm") +
+  theme_classic()
+ggsave("figures/fig-clay-corg.pdf", height = 4, width = 6)
+```
+
+# References
