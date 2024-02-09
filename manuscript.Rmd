@@ -153,7 +153,14 @@ data_soil[, Cstock :=          ## in Mg/ha
             1e-6               ## convert from g/ha to Mg/ha
 ]
 
-data_soil_C <- data_soil[, .(meanSC = sum(Cstock), clay = mean(as.numeric(CLAY), na.rm = TRUE)), .(N_PLOT)]
+data_soil_C <-
+  data_soil[, .(
+    meanSC = sum(Cstock),
+    SC10 = Cstock[SAMPLE_DEPTH == "0-10"],
+    clay = mean(as.numeric(CLAY), na.rm = TRUE)
+  ), .(N_PLOT)]
+
+setkey(data_soil_C, "N_PLOT")
 ```
 
 ```{r soc-error-propagation}
@@ -164,25 +171,34 @@ data_soil_unc = data_soil[, .(BD = rnorm(1000, BD, BD*0.1),
                               iter = 1:1000), 
                           .(N_PLOT, SAMPLE_DEPTH, h1, h0)]
 
-data_soil_unc = data_soil_unc[, .(Cstock = sum(
-  (h1 - h0) * 1e8 *  
-    BD * Corg/100 * (1-CF) * 1e-6  
-)),
-.(N_PLOT, iter)
+data_soil_unc = data_soil_unc[, .(
+  Cstock = sum(
+    (h1 - h0) * 1e8 *  
+      BD * Corg/100 * (1-CF) * 1e-6  
+  ), 
+  Cstock10 = (
+    (h1 - h0) * 1e8 *  
+      BD * Corg/100 * (1-CF) * 1e-6  
+  )[SAMPLE_DEPTH == "0-10"]),
+  .(N_PLOT, iter)
 ]
 
 data_soil_unc = data_soil_unc[, .(
   lwrSC = quantile(Cstock, 0.025), 
-  uprSC = quantile(Cstock, 0.975)), 
+  uprSC = quantile(Cstock, 0.975),
+  lwrSC10 = quantile(Cstock10, 0.025), 
+  uprSC10 = quantile(Cstock10, 0.975)), 
   .(N_PLOT)]
 ```
 
 ```{r combine-agb-soc-data}
 # combine AGB and soil C
-dataC <- merge(data_agb, data_soil_C)
+dataC <- merge(data_agb, data_soil_C, by = "N_PLOT", all=TRUE)
 
 # add soil carbon uncertainty
-dataC <- merge(dataC, data_soil_unc)
+dataC <- merge(dataC, data_soil_unc, all=TRUE)
+
+dataC[N_PLOT==6, `:=`(ID_VILLAGE = "GD", ID_AF = "CF")]
 
 dataC[, village := substr(ID_VILLAGE, 1, 1)]
 dataC$ID_AF <- factor(dataC$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
@@ -192,18 +208,27 @@ dataC$ID_AF <- factor(dataC$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
 
 ```{r tab-mean, results = "show"}
 # average values per village and SAF type
-dataC_mean <- dataC[, .(AGC = paste0(round(mean(meanAGC), 2), " +/- ", round(sd(meanAGC)/sqrt(length(meanAGC)), 2)), 
-                        SC = paste0(round(mean(meanSC), 2), " +/- ", round(sd(meanSC)/sqrt(length(meanSC)), 2))),
-                        .(ID_AF)]
+dataC_mean <- dataC[, .(AGC = paste0(round(mean(meanAGC[!is.na(meanAGC)]), 2), " +/- ", round(sd(meanAGC[!is.na(meanAGC)])/sqrt(length(meanAGC[!is.na(meanAGC)])), 2)), 
+                        SC = paste0(round(mean(meanSC[!is.na(meanSC)]), 2), " +/- ", round(sd(meanSC[!is.na(meanSC)])/sqrt(length(meanSC[!is.na(meanSC)])), 2))),
+                    .(ID_AF)]
 dataC_mean$ID_AF <- factor(dataC_mean$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
 dataC_mean = dataC_mean[order(dataC_mean$ID_AF),]
 knitr::kable(dataC_mean, col.names = c("Agroforestry system", "Aboveground carbon (Mg/ha)", "Soil organic carbon (Mg/ha)"))
 write.csv(dataC_mean, file = "tables/C_mean_SAF.csv", row.names = FALSE)
 ```
 
+```{r tab-anova, results = "show"}
+# 2-way anova 
+dataC[, ID_SUCO := substr(ID_VILLAGE, 1, 1)]
+anov1 = anova(lm(meanAGC~ID_SUCO+ID_AF, data = dataC))
+anov2 = anova(lm(meanSC~ID_SUCO+ID_AF, data = dataC))
+tab_anov = data.frame(response = rep(c("AGC", "SOC"), each = 2), 
+                      ind_var = rep(c("SUCO", "AF"), 2), 
+                      p = round(c(anov1$`Pr(>F)`[1:2], anov2$`Pr(>F)`[1:2]), 3)
+)
+```
+
 ```{r fig-1-map, fig.height =6, fig.width = 7}
-# required packages
-# req_packages <- c("BIOMASS", "readxl", "data.table", "ggmap", "ggplot2")
 
 ## 2. Load data from excel file ####
 data_coord <- read_xlsx("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = "GPS")
@@ -218,12 +243,12 @@ data_plot <- readxl::read_excel("data/DATA_BIOMASS_TL_SHORT.xlsx", "PLOT_GENERAL
 data_plot <- merge(data_coord, data_plot[, c("N_PLOT", "ID_VILLAGE", "ID_AF")])
 
 data_plot[, village := substr(ID_VILLAGE, 1, 1)]
-data_plot[village == "S", village := "Samalari"]
+data_plot[village == "S", village := "Osso Luga"]
 data_plot[village == "G", village := "Gariuai"]
 
 data_box = data_plot[, .(xc = mean(long), yc = mean(lat)), .(village)]
 data_box[village == "Gariuai", `:=`(w = 0.1, xc = xc + 0.001)]
-data_box[village == "Samalari", w := 0.05]
+data_box[village == "Osso Luga", w := 0.05]
 data_box[, `:=`(x1 = xc - w/2, x2 = xc + w/2, y1 = yc - w/2, y2 = yc + w/2)]
 
 ## create Timor map ####
@@ -231,26 +256,14 @@ data_box[, `:=`(x1 = xc - w/2, x2 = xc + w/2, y1 = yc - w/2, y2 = yc + w/2)]
 bbox <- c(124.5, -9.2, 127.5,  -8.3)
 # basemap <- ggmap::get_stamenmap(bbox, maptype = "terrain", zoom = 10)
 
-# geodata::elevation_3s(lon= c(data_box[village == "Samalari"]$x1), 
-#                       lat= c(data_box[village == "Samalari"]$y1), 
+# geodata::elevation_3s(lon= c(data_box[village == "Osso Luga"]$x1), 
+#                       lat= c(data_box[village == "Osso Luga"]$y1), 
 #                       path = "data")
 timor_map <- map_data("world", region = "Timor-Leste")
 
-# get elevation information
-elev = as.data.frame(terra::rast("data/srtm_62_14.tif"), xy = TRUE)
-elevS <- subset(elev, x > data_box[village == "Samalari"]$x1 & 
-                  x < data_box[village == "Samalari"]$x2 & 
-                  y > data_box[village == "Samalari"]$y1 & 
-                  y < data_box[village == "Samalari"]$y2)
-elevG <- subset(elev, x > data_box[village == "Gariuai"]$x1 & 
-                  x < data_box[village == "Gariuai"]$x2 & 
-                  y > data_box[village == "Gariuai"]$y1 & 
-                  y < data_box[village == "Gariuai"]$y2)
-
-# Timor map (fig 1a)
 g1 = ggplot(timor_map) + 
-  # lims(x = c(124.5, 127.5), y = c(-9.2, -8.3)) +
-  #ggmap::ggmap(basemap) +
+  annotate(geom = "text", label = "a", x = -Inf, y = Inf, 
+           hjust = 0, vjust = 1, fontface = "bold", size = 6) + 
   geom_polygon(aes(x = long, y = lat, group = group), fill="lightgray", colour = "grey") +
   geom_tile(data = data_box, aes(x = xc, y = yc, width = w, height = w), fill = NA, color = 1, linewidth = 0.5) +
   ggrepel::geom_text_repel(data = data_box, aes(x = xc, y = yc, label = village)) + 
@@ -260,21 +273,43 @@ g1 = ggplot(timor_map) +
         panel.background = element_blank())+
   coord_sf(crs = 'WGS84')
 
-# Gariuai map (fig 1b)
-g2 = ggplot(data = elevG) +
+
+# get elevation information
+elev = as.data.frame(terra::rast("data/srtm_62_14.tif"), xy = TRUE)
+elevS <- subset(elev, x > data_box[village == "Osso Luga"]$x1 & 
+                  x < data_box[village == "Osso Luga"]$x2 & 
+                  y > data_box[village == "Osso Luga"]$y1 & 
+                  y < data_box[village == "Osso Luga"]$y2)
+elevS$village = "Osso Luga"
+elevG <- subset(elev, x > data_box[village == "Gariuai"]$x1 & 
+                  x < data_box[village == "Gariuai"]$x2 & 
+                  y > data_box[village == "Gariuai"]$y1 & 
+                  y < data_box[village == "Gariuai"]$y2)
+elevG$village = "Gariuai"
+
+elevAll = rbind(elevS, elevG)
+
+## Map of villages and plots with elevation
+g2 = 
+  ggplot(data = elevAll) +
   geom_raster(aes(x = x, y = y, fill=srtm_62_14)) +
-  geom_point(data = subset(data_plot, village == "Gariuai"), 
+  geom_point(data = data_plot, 
              aes(x = long, y = lat, color = ID_AF), size = 2) + 
-  geom_point(data = subset(data_plot, village == "Gariuai"), 
+  geom_point(data = data_plot, 
              aes(x = long, y = lat), shape = 1, size = 2) + 
   # coord_equal() +
   viridis::scale_fill_viridis(option = "D",
                               limits = range(c(elevS$srtm_62_14, elevG$srtm_62_14))
   ) +
   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
-  labs(x = "", y = "", title = "Gariuai", color = "", fill="Elevation (m)") +
-  guides(color = FALSE, fill=guide_colorbar(title.position = "top")) + 
-  theme(legend.position = "top", axis.title = element_blank(), 
+  labs(x = NULL, y = NULL, color = NULL, fill="Elevation (m)") +
+  annotate(geom = "text", label = "b", x = -Inf, y = Inf, 
+           hjust = -0.5, vjust = 1, fontface = "bold", size = 6) + 
+  annotate(geom = "text", label = "c", x = Inf, y = -Inf, 
+           hjust = 12, vjust = -9.8, fontface = "bold", size = 6) + 
+  guides(color = FALSE, fill=guide_colorbar(title.position = "top")) +
+  theme(legend.position = c(0.8, 0.85), legend.direction="horizontal", 
+        axis.title = element_blank(), 
         axis.ticks = element_blank(), axis.text = element_blank(), 
         plot.title = element_text(hjust = 0.5), 
         panel.background = element_blank()) +
@@ -282,52 +317,38 @@ g2 = ggplot(data = elevG) +
   ggspatial::annotation_scale() +
   coord_sf(crs = 'WGS84')
 
-l1 = ggpubr::get_legend(g2)
-
-g2 = g2 + theme(legend.position = "none")
-# 
-# g2 + ggspatial::annotation_scale() +
-#   coord_sf(crs = 'WGS84')
-
-# Samalari map (fig 1c)
-g3 = ggplot(data = elevS) +
-  geom_raster(aes(x = x, y = y, fill=srtm_62_14)) +
-  
-  geom_point(data = subset(data_plot, village == "Samalari"), 
-             aes(x = long, y = lat, color = ID_AF), size = 2) + 
-  geom_point(data = subset(data_plot, village == "Samalari"), 
-             aes(x = long, y = lat), shape = 1, size = 2) + 
-  coord_equal() +
-  labs(x = "", y = "", title = "Samalari", color = "AF\nsystem", fill="Elevation (m)") +
+# get AFS legend
+g3 = ggplot(data_plot) +
+  geom_point(aes(x = long, y = lat, color = ID_AF)) + 
+  labs(color = "AFS") +
+  guides(color=guide_legend(ncol=2)) +
   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
-  viridis::scale_fill_viridis(option = "D",
-                              limits = range(c(elevS$srtm_62_14, elevG$srtm_62_14)))+
-  guides(color=guide_legend(nrow=2,byrow=TRUE), fill=FALSE) +
-  theme(legend.position = "bottom", axis.title = element_blank(), 
-        axis.ticks = element_blank(), axis.text = element_blank(), 
-        plot.title = element_text(hjust = 0.5), 
-        panel.background = element_blank()) + 
-  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))+
-  ggspatial::annotation_scale() +
-  coord_sf(crs = 'WGS84')
+  theme_classic()
+l1 = ggpubr::get_legend(g3)
 
-l2 = ggpubr::get_legend(g3)
-g3 = g3 + theme(legend.position = "none")
+ggpubr::ggarrange(ggpubr::ggarrange(g1, l1), g2, ncol = 1, heights = c(1,2))
 
 
-ggpubr::ggarrange(g1, 
-                  ggpubr::ggarrange(g2, 
-                                    ggpubr::ggarrange(g3, l1, l2, ncol=1, heights = c(4,1,1)), 
-                                    widths = c(4,3), labels = c("b", "c")), 
-                  heights = c(1, 3), nrow = 2, labels = c("a", ""))
+ggsave("figures/mapPlotsSRTM.png", height =4.5, width = 6)
 
 
-ggsave("figures/mapPlotsSRTM.png", height =6, width = 7)
+# extract elevation and rainfall for the 2 villages
+data_plot$prec <- terra::extract(
+  terra::rast("D:/maps/CHELSA/CHELSA_bio12_1981-2010_V.2.1.tif"), 
+  cbind(data_plot$long, data_plot$lat)
+)
+data_plot$elev <- terra::extract(
+  terra::rast("data/srtm_62_14.tif"), 
+  cbind(data_plot$long, data_plot$lat)
+)
+data_plot[, ID_SUCO := substr(ID_VILLAGE, 1, 1)]
+data_plot[, .(prec = mean(prec), range_prec = paste(range(prec), collapse = " - ")), .(ID_SUCO)]
+data_plot[, .(elev = mean(elev), range_elev = paste(range(elev), collapse = " - ")), .(ID_SUCO)]
 ```
 
 
 ```{r anova}
-## identify otuliers
+## identify outliers
 # library(magrittr)
 library(rstatix)
 dataC %>% 
@@ -372,14 +393,91 @@ tuk.cld <- cld(tuk)   # letter-based display
 
 opar <- par(mai=c(1,1,1.5,1))
 plot(tuk.cld)
+
+## non parametric test
+#updated translation of help page implementation of Nemenyi-Damico-Wolfe-Dunn test
+library(coin)
+is.factor(dataC$ID_AF)
+NDWD <-
+  independence_test(meanAGC ~ ID_AF, data = dataC)
+# , distribution = approximate(B = 10000),
+# ytrafo = function(data) trafo(data, numeric_trafo = rank_trafo),
+# xtrafo = mcp_trafo(iv = "Tukey"))
+
+### global p-value
+print(pvalue(NDWD))
+
+### sites (I = II) != (III = IV) at alpha = 0.01 (page 244)
+print(pvalue(NDWD, method = "single-step"))
+
+#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
+
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+
+# Data preparation
+# 
+# Here, we’ll use the built-in R data set named PlantGrowth. It contains the weight of plants obtained under a control and two different treatment conditions.
+
+# Re-order the group levels:
+
+# dataC <- dataC %>%
+#   reorder_levels(group, order = c("ctrl", "trt1", "trt2"))
+
+dataC %>% 
+  group_by(ID_AF) %>%
+  get_summary_stats(meanAGC, type = "common")
+
+
+# Create a box plot of weight by group:
+
+
+# Question: We want to know if there is any significant difference between the
+# average weights of plants in the 3 experimental conditions.
+
+# We’ll use the pipe-friendly kruskal_test() function [rstatix package], a
+# wrapper around the R base function kruskal.test().
+
+res.kruskal <- dataC %>% kruskal_test(meanAGC ~ ID_AF)
+res.kruskal
+
+# Effect size
+#
+# The eta squared, based on the H-statistic, can be used as the measure of the
+# Kruskal-Wallis test effect size. It is calculated as follow : eta2[H] = (H - k
+# + 1)/(n - k); where H is the value obtained in the Kruskal-Wallis test; k is
+# the number of groups; n is the total number of observations (M. T. Tomczak and
+# Tomczak 2014).
+#
+# The eta-squared estimate assumes values from 0 to 1 and multiplied by 100
+# indicates the percentage of variance in the dependent variable explained by
+# the independent variable.
+#
+# The interpretation values commonly in published literature are: 0.01- < 0.06
+# (small effect), 0.06 - < 0.14 (moderate effect) and >= 0.14 (large effect).
+
+dataC %>% kruskal_effsize(meanAGC ~ ID_AF)
+
+# Multiple pairwise-comparisons
+# 
+# From the output of the Kruskal-Wallis test, we know that there is a significant difference between groups, but we don’t know which pairs of groups are different.
+# 
+# A significant Kruskal-Wallis test is generally followed up by Dunn’s test to identify which groups are different. It’s also possible to use the Wilcoxon’s test to calculate pairwise comparisons between group levels with corrections for multiple testing.
+
+
+# Pairwise comparisons
+pwc <- dataC %>% 
+  dunn_test(meanAGC ~ ID_AF, p.adjust.method = "bonferroni") 
+pwc[pwc$p.adj.signif=="*",]
 ```
 
 ```{r fig-2-barplot, fig.height = 5, fig.width = 6}
 ## melt data.table
 dataC_all <- melt(dataC, id.vars = c("N_PLOT", "ID_VILLAGE", "ID_AF", "village"), 
-              measure.vars = c("meanAGC", "meanBGC", "meanSC"))
+                  measure.vars = c("meanAGC", "meanBGC", "meanSC"))
 
-dataC_all <- dataC_all[, .(value = mean(value)), .(village, ID_AF, variable)]
+dataC_all <- dataC_all[, .(value = mean(value, na.rm = TRUE)), .(village, ID_AF, variable)]
 
 ## reorder factors 
 
@@ -389,6 +487,8 @@ dataC_all$ID_AF <- factor(dataC_all$ID_AF, levels = c("CF", "SP", "YA", "HG", "F
 
 dataC_all[, variable := factor(variable, levels = c("meanAGC", "meanBGC", "meanSC"))]
 levels(dataC_all$variable) <- c("AGC", "BGC", "SOC")
+dataC_all[, village := factor(village)]
+levels(dataC_all$village) <- c("Gariuai", "Osso Luga")
 
 ggplot(dataC_all, aes(x = ID_AF, y = value, fill = variable)) +
   geom_bar(position="stack", stat="identity") + 
@@ -401,21 +501,77 @@ ggplot(dataC_all, aes(x = ID_AF, y = value, fill = variable)) +
 ggsave("figures/fig-carbon-stocks-stack.png", height = 5, width = 6)
 ```
 
-```{r fig-3-reg, fig.height = 5, fig.width = 7}
+```{r fig-3-reg, fig.height = 4, fig.width = 8}
 ## mixed effect linear regression
 lmeReg <- lmerTest::lmer(meanSC ~ meanAGC + (1|village), data = dataC)
 # Nakagawa’s R2 for mixed models
 R2 = performance::r2_nakagawa(lmeReg)
-  
+summary(lmeReg)
+
+# same for topsoil layer (0-10 cm)
+lmeReg10 <- lmerTest::lmer(SC10 ~ meanAGC + (1|village), data = dataC)
+# Nakagawa’s R2 for mixed models
+R210 = performance::r2_nakagawa(lmeReg10)
+summary(lmeReg10)
+
+dfreg = 
+  data.frame(
+    depth = c("Soil depth: 0-30 cm", "Soil depth: 0-10 cm"), 
+    intercept = c(summary(lmeReg)$coefficients[1,1], summary(lmeReg10)$coefficients[1,1]), 
+    slope = c(summary(lmeReg)$coefficients[2,1], summary(lmeReg10)$coefficients[2,1]), 
+    R2_cond = c(R2$R2_conditional, R210$R2_conditional), 
+    R2_marg = c(R2$R2_marginal, R210$R2_marginal)
+  )
+
+
+# change village names
+dataC[, village := factor(village)]
+levels(dataC$village) <- c("Gariuai", "Osso Luga")
+
+# stack data for figure
+
+dataC_30 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "meanSC", "lwrSC", "uprSC")]
+dataC_30$depth = "Soil depth: 0-30 cm"
+dataC_10 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "SC10", "lwrSC10", "uprSC10")]
+dataC_10$depth = "Soil depth: 0-10 cm"
+colnames(dataC_10) = colnames(dataC_30)
+dataC_fig = rbind(dataC_10, dataC_30)
+
+## figure
+ggplot(dataC_fig, aes(color = ID_AF)) +
+  geom_point(aes(x = meanAGC, y = meanSC, shape = village), size = 2) + 
+  geom_text(data = dfreg, aes(label = paste0("R^{2}*' (marg.) = '*", round(R2_marg, 3))),
+            x = Inf, y = Inf, hjust = 1, vjust = 1.2, parse = TRUE, color = 1) +
+  geom_text(data = dfreg, aes(label = paste0("R^{2}*' (cond.) = '*", round(R2_cond, 3))),
+            x = Inf, y = Inf, hjust = 1, vjust = 2.2, parse = TRUE, color = 1) +
+  geom_linerange(aes(x = meanAGC, y = meanSC, ymin = lwrSC, ymax = uprSC)) +
+  geom_errorbarh(aes(y = meanSC, xmin = lwrAGC, xmax = uprAGC)) +
+  geom_abline(data = dfreg, aes(intercept = intercept, slope = slope), lty = 2) +
+  labs(color = "AF system", x = "Aboveground C (Mg C/ha)", y = "Soil C (Mg C/ha)") + 
+  expand_limits(x = 0, y = 0) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  facet_wrap(~depth) + 
+  theme_classic() 
+
+ggsave("figures/fig-scatterplot-carbon.png", height = 4, width = 8)
+```
+
+```{r fig-3-reg-10, fig.height = 5, fig.width = 7}
+## mixed effect linear regression
+lmeReg10 <- lmerTest::lmer(SC10 ~ meanAGC + (1|village), data = dataC)
+# Nakagawa’s R2 for mixed models
+R2 = performance::r2_nakagawa(lmeReg)
+
 ## figure
 ggplot(dataC, aes(color = ID_AF)) +
-  geom_point(aes(x = meanAGC, y = meanSC, shape = village), size = 2) + 
+  geom_point(aes(x = meanAGC, y = SC10, shape = village), size = 2) + 
   annotate(geom= "text", x = Inf, y = Inf, hjust = 1, vjust = 1, parse = TRUE,
            label = paste0("R^{2}*' (marg.) = '*", round(R2$R2_marginal, 3))) +
   annotate(geom= "text", x = Inf, y = Inf, hjust = 1, vjust = 2, parse = TRUE,
            label = paste0("R^{2}*' (cond.) = '*", round(R2$R2_conditional, 3))) +
-  geom_linerange(aes(x = meanAGC, y = meanSC, ymin = lwrSC, ymax = uprSC)) +
-  geom_errorbarh(aes(y = meanSC, xmin = lwrAGC, xmax = uprAGC)) +
+  # geom_linerange(aes(x = meanAGC, y = SC10, ymin = lwrSC, ymax = uprSC)) +
+  geom_errorbarh(aes(y = SC10, xmin = lwrAGC, xmax = uprAGC)) +
   geom_abline(intercept = summary(lmeReg)$coefficients[1,1], slope = summary(lmeReg)$coefficients[2,1], lty = 2) +
   labs(color = "AF system", x = "Aboveground C (Mg C/ha)", y = "Soil C (Mg C/ha)") + 
   expand_limits(x = 0, y = 0) +
@@ -471,6 +627,77 @@ ggplot(data_soil, aes(x = as.numeric(CLAY), y = Corg, col = SAMPLE_DEPTH)) +
   geom_smooth(method = "lm") +
   theme_classic()
 ggsave("figures/fig-clay-corg.pdf", height = 4, width = 6)
+```
+
+```{r test-ac-soc-by-depth}
+data_soil_agc <- merge(data_soil[, c("N_PLOT", "SAMPLE_DEPTH", "Cstock")], 
+                       dataC[, c("N_PLOT","ID_AF", "ID_VILLAGE",  "meanAGC")], by = "N_PLOT")
+
+ggplot(data_soil_agc, aes(x = meanAGC, y = Cstock, col = SAMPLE_DEPTH)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+lm(data = data_soil_agc, Cstock ~ meanAGC * SAMPLE_DEPTH) |> summary()
+lm(data = data_soil_agc[SAMPLE_DEPTH == "0-10"], Cstock ~ meanAGC) |> summary()
+lm(data = data_soil_agc[SAMPLE_DEPTH == "10-20"], Cstock ~ meanAGC ) |> summary()
+lm(data = data_soil_agc[SAMPLE_DEPTH == "20-30"], Cstock ~ meanAGC ) |> summary()
+```
+
+```{r compare-lit-values}
+litval <- read_excel("data/literature-values.xlsx")
+colnames(litval) <- c("system", "pool", "value", "location", "ref")
+
+
+litval$main_crop <- NA
+litval$main_crop[grepl("palm", litval$system)] <- "oil palm"
+litval$main_crop[grepl("offee", litval$system)] <- "coffee"
+unique(litval$system[is.na(litval$main_crop)])
+
+litval$main_per <- NA
+litval$main_per[grepl("nset", litval$system)] <- "enset"
+litval$main_per[grepl("Inga", litval$system)] <- "inga"
+litval$main_per[grepl("Eucalyptus", litval$system)] <- "eucalyptus"
+litval$main_per[grepl("Pinus", litval$system)] <- "pinus"
+unique(litval$system[is.na(litval$main_per)])
+
+litval$ID_AF <- NA
+litval$ID_AF[grepl("orests|orest |orest$", litval$system)] <- "forest"
+litval$ID_AF[grepl("onoculture", litval$system)] <- "monoculture"
+litval$ID_AF[!is.na(litval$main_crop) & !is.na(litval$main_per)] <- "two-crops"
+litval$ID_AF[grepl("ome garden", litval$system)] <- "HG"
+unique(litval$system[is.na(litval$ID_AF)])
+
+litval$var <- as.numeric(gsub(" ", "", tstrsplit(litval$value, "±")[[2]]))
+litval$value <- gsub(" ", "", tstrsplit(litval$value, "±")[[1]])
+
+mult_values <- which(sapply(strsplit(litval$value, ",|and"), length)>1)
+
+new_rows = lapply(mult_values, function(i){
+  vals = as.numeric(strsplit(litval$value[i], ",|and")[[1]])
+  vals = vals[!is.na(vals)]
+  
+  x = matrix(litval[i,], ncol = ncol(litval), nrow = length(vals), byrow = TRUE)
+  x[, colnames(litval) == "value"] = vals
+  
+  x = as.data.frame(x)
+  colnames(x) = colnames(litval)
+  return(x)
+}
+)
+
+new_rows = do.call(rbind, new_rows) 
+
+litval2 = rbind(new_rows, litval[-mult_values,])
+litval = data.frame(system = unlist(litval2$system), 
+                    pool = unlist(litval2$pool), 
+                    value = unlist(litval2$value), 
+                    location = unlist(litval2$location), 
+                    ref = unlist(litval2$ref), 
+                    main_crop = unlist(litval2$main_crop),
+                    main_per = unlist(litval2$main_per), 
+                    ID_AF = unlist(litval2$ID_AF), 
+                    var = unlist(litval2$var))
+
 ```
 
 # References
