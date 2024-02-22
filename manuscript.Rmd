@@ -217,15 +217,93 @@ knitr::kable(dataC_mean, col.names = c("Agroforestry system", "Aboveground carbo
 write.csv(dataC_mean, file = "tables/C_mean_SAF.csv", row.names = FALSE)
 ```
 
+```{r group-comparison}
+## test normality of the data
+
+# log-transform data to get normal distributions (because strictly positive data)
+hist(log(dataC$meanAGC), breaks = 20)
+hist(log(dataC$meanSC))
+
+shapiro.test(log(dataC$meanAGC))
+shapiro.test(log(dataC$meanSC))
+# remove extreme outlier and test normality
+dataC[, .(
+  shap.A = shapiro.test(log(meanAGC))$p.value, 
+  shap.S = shapiro.test(log(meanSC))$p.value
+  ), .(ID_AF, ID_SUCO)]
+# levene test of homoscedasticity
+dataC[, leveneTest(log(meanAGC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
+dataC[, leveneTest(log(meanSC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
+
+# # pairwise group comparison with Tukey HSD method
+# # https://arc.lib.montana.edu/book/statistics-with-r-textbook/item/59
+# library(multcomp)
+# aovAGC = aov(meanAGC ~ ID_AF, data = dataC)
+# tuk <- glht(aovAGC, linfct = mcp(ID_AF = "Tukey"))
+# summary(tuk)          # standard display
+# tuk.cld <- cld(tuk)   # letter-based display
+# 
+# plot(tuk.cld)
+
+# # soc
+# aovSOC = aov(meanSC ~ ID_AF, data = dataC)
+# tuk <- glht(aovSOC, linfct = mcp(ID_AF = "Tukey"))
+# summary(tuk)          # standard display
+# tuk.cld <- cld(tuk)   # letter-based display
+# 
+# opar <- par(mai=c(1,1,1.5,1))
+# plot(tuk.cld)
+
+## non parametric test
+#updated translation of help page implementation of Nemenyi-Damico-Wolfe-Dunn test
+# library(coin)
+# is.factor(dataC$ID_AF)
+# NDWD <-
+#   independence_test(meanAGC ~ ID_AF, data = dataC)
+# , distribution = approximate(B = 10000),
+# ytrafo = function(data) trafo(data, numeric_trafo = rank_trafo),
+# xtrafo = mcp_trafo(iv = "Tukey"))
+
+### global p-value
+# print(pvalue(NDWD))
+
+### sites (I = II) != (III = IV) at alpha = 0.01 (page 244)
+# print(pvalue(NDWD, method = "single-step"))
+
+#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
+
+res.kruskal <- kruskal_test(log(meanAGC) ~ ID_AF, data = dataC)
+res.kruskal
+
+# Multiple pairwise-comparisons
+
+# Pairwise comparisons
+pwc <- dataC %>% 
+  dunn_test(meanAGC ~ ID_AF, p.adjust.method = "bonferroni") 
+pwc[pwc$p.adj.signif=="*",]
+
+
+```
+
+
 ```{r tab-anova, results = "show"}
 # 2-way anova 
 dataC[, ID_SUCO := substr(ID_VILLAGE, 1, 1)]
-anov1 = anova(lm(meanAGC~ID_SUCO+ID_AF, data = dataC))
-anov2 = anova(lm(meanSC~ID_SUCO+ID_AF, data = dataC))
+anov1 = anova(lm(log(meanAGC)~ID_SUCO+ID_AF, data = dataC))
+anov2 = anova(lm(log(meanSC)~ID_SUCO+ID_AF, data = dataC))
 tab_anov = data.frame(response = rep(c("AGC", "SOC"), each = 2), 
                       ind_var = rep(c("SUCO", "AF"), 2), 
                       p = round(c(anov1$`Pr(>F)`[1:2], anov2$`Pr(>F)`[1:2]), 3)
 )
+
+knitr::kable(tab_anov)
+## non parametric 2 way anova: anova on ranks
+# anov1 = anova(lm(rank(meanAGC)~ID_SUCO+ID_AF, data = dataC))
+# anov2 = anova(lm(rank(meanSC)~ID_SUCO+ID_AF, data = dataC))
+# tab_anov = data.frame(response = rep(c("AGC", "SOC"), each = 2), 
+#                       ind_var = rep(c("SUCO", "AF"), 2), 
+#                       p = round(c(anov1$`Pr(>F)`[1:2], anov2$`Pr(>F)`[1:2]), 3)
+# )
 ```
 
 ```{r fig-1-map, fig.height =6, fig.width = 7}
@@ -347,130 +425,7 @@ data_plot[, .(elev = mean(elev), range_elev = paste(range(elev), collapse = " - 
 ```
 
 
-```{r anova}
-## identify outliers
-# library(magrittr)
-library(rstatix)
-dataC %>% 
-  group_by(ID_AF) %>%
-  identify_outliers(meanAGC)
 
-dataC %>% 
-  group_by(ID_AF) %>%
-  identify_outliers(meanSC)
-
-# remove extreme outlier and test normality
-dataC[N_PLOT != 11] %>%
-  group_by(ID_AF) %>%
-  shapiro_test(meanAGC)
-
-dataC %>%
-  group_by(ID_AF) %>%
-  shapiro_test(meanSC)
-
-# non parametric kruskal wallis test 
-kruskalAGC = kruskal.test(meanAGC ~ ID_AF,  data = dataC)
-kruskal.test(meanSC ~ ID_AF,  data = dataC)
-kruskal.test(meanAGC ~ village,  data = dataC)
-kruskal.test(meanSC ~ village,  data = dataC)
-
-# pairwise group comparison with Tukey HSD method
-# https://arc.lib.montana.edu/book/statistics-with-r-textbook/item/59
-library(multcomp)
-aovAGC = aov(meanAGC ~ ID_AF, data = dataC[N_PLOT != 11])
-tuk <- glht(aovAGC, linfct = mcp(ID_AF = "Tukey"))
-summary(tuk)          # standard display
-tuk.cld <- cld(tuk)   # letter-based display
-
-plot(tuk.cld)
-
-
-# soc
-aovSOC = aov(meanSC ~ ID_AF, data = dataC)
-tuk <- glht(aovSOC, linfct = mcp(ID_AF = "Tukey"))
-summary(tuk)          # standard display
-tuk.cld <- cld(tuk)   # letter-based display
-
-opar <- par(mai=c(1,1,1.5,1))
-plot(tuk.cld)
-
-## non parametric test
-#updated translation of help page implementation of Nemenyi-Damico-Wolfe-Dunn test
-library(coin)
-is.factor(dataC$ID_AF)
-NDWD <-
-  independence_test(meanAGC ~ ID_AF, data = dataC)
-# , distribution = approximate(B = 10000),
-# ytrafo = function(data) trafo(data, numeric_trafo = rank_trafo),
-# xtrafo = mcp_trafo(iv = "Tukey"))
-
-### global p-value
-print(pvalue(NDWD))
-
-### sites (I = II) != (III = IV) at alpha = 0.01 (page 244)
-print(pvalue(NDWD, method = "single-step"))
-
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
-
-library(tidyverse)
-library(ggpubr)
-library(rstatix)
-
-# Data preparation
-# 
-# Here, we’ll use the built-in R data set named PlantGrowth. It contains the weight of plants obtained under a control and two different treatment conditions.
-
-# Re-order the group levels:
-
-# dataC <- dataC %>%
-#   reorder_levels(group, order = c("ctrl", "trt1", "trt2"))
-
-dataC %>% 
-  group_by(ID_AF) %>%
-  get_summary_stats(meanAGC, type = "common")
-
-
-# Create a box plot of weight by group:
-
-
-# Question: We want to know if there is any significant difference between the
-# average weights of plants in the 3 experimental conditions.
-
-# We’ll use the pipe-friendly kruskal_test() function [rstatix package], a
-# wrapper around the R base function kruskal.test().
-
-res.kruskal <- dataC %>% kruskal_test(meanAGC ~ ID_AF)
-res.kruskal
-
-# Effect size
-#
-# The eta squared, based on the H-statistic, can be used as the measure of the
-# Kruskal-Wallis test effect size. It is calculated as follow : eta2[H] = (H - k
-# + 1)/(n - k); where H is the value obtained in the Kruskal-Wallis test; k is
-# the number of groups; n is the total number of observations (M. T. Tomczak and
-# Tomczak 2014).
-#
-# The eta-squared estimate assumes values from 0 to 1 and multiplied by 100
-# indicates the percentage of variance in the dependent variable explained by
-# the independent variable.
-#
-# The interpretation values commonly in published literature are: 0.01- < 0.06
-# (small effect), 0.06 - < 0.14 (moderate effect) and >= 0.14 (large effect).
-
-dataC %>% kruskal_effsize(meanAGC ~ ID_AF)
-
-# Multiple pairwise-comparisons
-# 
-# From the output of the Kruskal-Wallis test, we know that there is a significant difference between groups, but we don’t know which pairs of groups are different.
-# 
-# A significant Kruskal-Wallis test is generally followed up by Dunn’s test to identify which groups are different. It’s also possible to use the Wilcoxon’s test to calculate pairwise comparisons between group levels with corrections for multiple testing.
-
-
-# Pairwise comparisons
-pwc <- dataC %>% 
-  dunn_test(meanAGC ~ ID_AF, p.adjust.method = "bonferroni") 
-pwc[pwc$p.adj.signif=="*",]
-```
 
 ```{r fig-2-barplot, fig.height = 5, fig.width = 6}
 ## melt data.table
@@ -700,8 +655,6 @@ litval = data.frame(system = unlist(litval2$system),
 
 ```
 
-
-## Supplemental information
 
 ### Botanical identification from Tetum names
 
