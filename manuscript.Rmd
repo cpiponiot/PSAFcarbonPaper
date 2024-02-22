@@ -700,4 +700,49 @@ litval = data.frame(system = unlist(litval2$system),
 
 ```
 
+
+## Supplemental information
+
+### Botanical identification from Tetum names
+
+```{r tetum-names}
+sheets1 = grep("INV", readxl::excel_sheets("data/DATA_BIOMASS_TL_LARGE.xlsx"), value = TRUE)
+sheets2 = grep("INV", readxl::excel_sheets("data/DATA_BIOMASS_TL_SHORT.xlsx"), value = TRUE)
+
+vern1 <- lapply(sheets1, \(x){
+  df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x) 
+  df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |> 
+    unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
+})
+vern2 <- lapply(sheets2, \(x){
+    df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x) 
+  df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |> 
+    unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
+})
+
+vern = rbind(rbindlist(vern1), rbindlist(vern2)) |>  unique()
+vern <- subset(vern, !is.na(TETUM_NAME) & !is.na(SCIENTIFIC_NAME))
+
+## correct scientific names 
+vern[, c("genus", "species") := tstrsplit(SCIENTIFIC_NAME, " ")[1:2]]
+vern[species %in% c("sp", "sp."), species := NA]
+vern[species == "purpuroides", species := NA]
+corr = BIOMASS::correctTaxo(genus = vern$genus, species = vern$species)
+vern = cbind(vern, corr)
+
+vern[, latin := paste(genusCorrected, speciesCorrected)]
+vern[, latin := gsub(" NA", " sp.", latin)]
+vern[,tetum := gsub("  ", " ", tolower(TETUM_NAME))]
+vern <- vern[, c("tetum", "latin", "genusCorrected", "speciesCorrected")]
+vern = unique(vern)
+
+# check that all names are unique
+# if one tetum name has two levels of id (same genus), keep better identification
+dupl_tetum <- vern[duplicated(tetum), unique(tetum)]
+vern = vern[!(tetum %in% dupl_tetum & is.na(speciesCorrected))]
+setorder(vern, tetum)
+
+vern = vern[, .(latin = paste(latin, collapse = ", ")), .(tetum)]
+write.csv(vern, "data/species-correspondance.csv", row.names = FALSE) 
+```
 # References

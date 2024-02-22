@@ -206,7 +206,7 @@ data_tot$BGC  = data_tot$RS * data_tot$AGC
 ## 8. estimate plot AGB and BGB ####
 
 # get plot area
-data_tot[, AREA := ifelse(ARTIFICIAL_PLOT, 1, AREA_TOTAL_PARCEL)]
+data_tot[, AREA := AREA_TOTAL_PARCEL]
 
 # type of plot (total or quadrat)
 data_tot[, TYPE := ifelse(grepl("Q", data_tot$N_Q_ID), "QUADRAT", "TOTAL")]
