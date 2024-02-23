@@ -218,20 +218,21 @@ write.csv(dataC_mean, file = "tables/C_mean_SAF.csv", row.names = FALSE)
 ```
 
 ```{r group-comparison}
+
+dataC[, ID_SUCO := substr(ID_VILLAGE, 1, 1)]
 ## test normality of the data
 
 # log-transform data to get normal distributions (because strictly positive data)
-hist(log(dataC$meanAGC), breaks = 20)
-hist(log(dataC$meanSC))
+hist((dataC$meanAGC), breaks = 20)
+hist((dataC$meanSC))
 
-shapiro.test(log(dataC$meanAGC))
-shapiro.test(log(dataC$meanSC))
-# remove extreme outlier and test normality
+# test normality
 dataC[, .(
   shap.A = shapiro.test(log(meanAGC))$p.value, 
   shap.S = shapiro.test(log(meanSC))$p.value
   ), .(ID_AF, ID_SUCO)]
 # levene test of homoscedasticity
+library(car)
 dataC[, leveneTest(log(meanAGC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
 dataC[, leveneTest(log(meanSC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
 
@@ -266,23 +267,6 @@ dataC[, leveneTest(log(meanSC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
 
 ### global p-value
 # print(pvalue(NDWD))
-
-### sites (I = II) != (III = IV) at alpha = 0.01 (page 244)
-# print(pvalue(NDWD, method = "single-step"))
-
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
-
-res.kruskal <- kruskal_test(log(meanAGC) ~ ID_AF, data = dataC)
-res.kruskal
-
-# Multiple pairwise-comparisons
-
-# Pairwise comparisons
-pwc <- dataC %>% 
-  dunn_test(meanAGC ~ ID_AF, p.adjust.method = "bonferroni") 
-pwc[pwc$p.adj.signif=="*",]
-
-
 ```
 
 
@@ -307,7 +291,6 @@ knitr::kable(tab_anov)
 ```
 
 ```{r fig-1-map, fig.height =6, fig.width = 7}
-
 ## 2. Load data from excel file ####
 data_coord <- read_xlsx("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = "GPS")
 data.table::setDT(data_coord)
@@ -424,9 +407,6 @@ data_plot[, .(prec = mean(prec), range_prec = paste(range(prec), collapse = " - 
 data_plot[, .(elev = mean(elev), range_elev = paste(range(elev), collapse = " - ")), .(ID_SUCO)]
 ```
 
-
-
-
 ```{r fig-2-barplot, fig.height = 5, fig.width = 6}
 ## melt data.table
 dataC_all <- melt(dataC, id.vars = c("N_PLOT", "ID_VILLAGE", "ID_AF", "village"), 
@@ -456,35 +436,45 @@ ggplot(dataC_all, aes(x = ID_AF, y = value, fill = variable)) +
 ggsave("figures/fig-carbon-stocks-stack.png", height = 5, width = 6)
 ```
 
-```{r fig-3-reg, fig.height = 4, fig.width = 8}
+```{r tab-3-reg, results = "show"}
 ## mixed effect linear regression
-lmeReg <- lmerTest::lmer(meanSC ~ meanAGC + (1|village), data = dataC)
+lmeReg <- lmerTest::lmer(log(meanSC) ~ log(meanAGC) + (1|village), data = dataC)
 # Nakagawa’s R2 for mixed models
 R2 = performance::r2_nakagawa(lmeReg)
 summary(lmeReg)
 
 # same for topsoil layer (0-10 cm)
-lmeReg10 <- lmerTest::lmer(SC10 ~ meanAGC + (1|village), data = dataC)
+lmeReg10 <- lmerTest::lmer(log(SC10) ~ log(meanAGC) + (1|village), data = dataC)
 # Nakagawa’s R2 for mixed models
 R210 = performance::r2_nakagawa(lmeReg10)
 summary(lmeReg10)
 
 dfreg = 
-  data.frame(
+  data.table(
     depth = c("Soil depth: 0-30 cm", "Soil depth: 0-10 cm"), 
     intercept = c(summary(lmeReg)$coefficients[1,1], summary(lmeReg10)$coefficients[1,1]), 
     slope = c(summary(lmeReg)$coefficients[2,1], summary(lmeReg10)$coefficients[2,1]), 
+    pvalue = c(summary(lmeReg)$coefficients[2,5], summary(lmeReg10)$coefficients[2,5]),
     R2_cond = c(R2$R2_conditional, R210$R2_conditional), 
     R2_marg = c(R2$R2_marginal, R210$R2_marginal)
   )
 
+```
+
+```{r fig-3-reg, fig.height = 4, fig.width = 8}
+dfpred = expand.grid(meanAGC = exp(seq(min(log(dataC$meanAGC), na.rm = TRUE),
+                                       max(log(dataC$meanAGC), na.rm = TRUE),
+                                       length.out = 20)),
+                     depth = c("Soil depth: 0-30 cm", "Soil depth: 0-10 cm")) |>
+  merge(dfreg[, c("depth", "intercept", "slope")], by = "depth")
+setDT(dfpred)
+dfpred[, meanSC := exp(intercept + slope * log(meanAGC))]
 
 # change village names
 dataC[, village := factor(village)]
 levels(dataC$village) <- c("Gariuai", "Osso Luga")
 
 # stack data for figure
-
 dataC_30 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "meanSC", "lwrSC", "uprSC")]
 dataC_30$depth = "Soil depth: 0-30 cm"
 dataC_10 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "SC10", "lwrSC10", "uprSC10")]
@@ -494,79 +484,75 @@ dataC_fig = rbind(dataC_10, dataC_30)
 
 ## figure
 ggplot(dataC_fig, aes(color = ID_AF)) +
-  geom_point(aes(x = meanAGC, y = meanSC, shape = village), size = 2) + 
+  geom_point(aes(x = meanAGC, y = meanSC, shape = village), size = 2) +
   geom_text(data = dfreg, aes(label = paste0("R^{2}*' (marg.) = '*", round(R2_marg, 3))),
-            x = Inf, y = Inf, hjust = 1, vjust = 1.2, parse = TRUE, color = 1) +
+            x = -Inf, y = Inf, hjust = -0.1, vjust = 1.2, parse = TRUE, color = 1) +
   geom_text(data = dfreg, aes(label = paste0("R^{2}*' (cond.) = '*", round(R2_cond, 3))),
-            x = Inf, y = Inf, hjust = 1, vjust = 2.2, parse = TRUE, color = 1) +
+            x = -Inf, y = Inf, hjust = -0.1, vjust = 2.2, parse = TRUE, color = 1) +
   geom_linerange(aes(x = meanAGC, y = meanSC, ymin = lwrSC, ymax = uprSC)) +
   geom_errorbarh(aes(y = meanSC, xmin = lwrAGC, xmax = uprAGC)) +
-  geom_abline(data = dfreg, aes(intercept = intercept, slope = slope), lty = 2) +
-  labs(color = "AF system", x = "Aboveground C (Mg C/ha)", y = "Soil C (Mg C/ha)") + 
+  # geom_abline(data = dfreg, aes(intercept = intercept, slope = slope), lty = 2) +
+  geom_line(data = dfpred, aes(x = meanAGC, y = meanSC), lty = 2, col = 1) +
+  labs(color = "AFS", x = "AGC stocks (Mg C/ha)", y = "SOC stocks (Mg C/ha)", shape = "Site") +
   expand_limits(x = 0, y = 0) +
   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
-  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
-  facet_wrap(~depth) + 
-  theme_classic() 
+  # scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  scale_x_log10() +
+  scale_y_log10() +
+  facet_wrap(~depth) +
+  theme_classic()
 
 ggsave("figures/fig-scatterplot-carbon.png", height = 4, width = 8)
 ```
 
-```{r fig-3-reg-10, fig.height = 5, fig.width = 7}
-## mixed effect linear regression
-lmeReg10 <- lmerTest::lmer(SC10 ~ meanAGC + (1|village), data = dataC)
-# Nakagawa’s R2 for mixed models
-R2 = performance::r2_nakagawa(lmeReg)
 
-## figure
-ggplot(dataC, aes(color = ID_AF)) +
-  geom_point(aes(x = meanAGC, y = SC10, shape = village), size = 2) + 
-  annotate(geom= "text", x = Inf, y = Inf, hjust = 1, vjust = 1, parse = TRUE,
-           label = paste0("R^{2}*' (marg.) = '*", round(R2$R2_marginal, 3))) +
-  annotate(geom= "text", x = Inf, y = Inf, hjust = 1, vjust = 2, parse = TRUE,
-           label = paste0("R^{2}*' (cond.) = '*", round(R2$R2_conditional, 3))) +
-  # geom_linerange(aes(x = meanAGC, y = SC10, ymin = lwrSC, ymax = uprSC)) +
-  geom_errorbarh(aes(y = SC10, xmin = lwrAGC, xmax = uprAGC)) +
-  geom_abline(intercept = summary(lmeReg)$coefficients[1,1], slope = summary(lmeReg)$coefficients[2,1], lty = 2) +
-  labs(color = "AF system", x = "Aboveground C (Mg C/ha)", y = "Soil C (Mg C/ha)") + 
-  expand_limits(x = 0, y = 0) +
-  scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
-  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
-  # scale_linetype_manual(values=c("twodash", "dotted"))+
-  theme_classic() 
-ggsave("figures/fig-scatterplot-carbon.png", height = 5, width = 7)
-```
+## Total carbon stocks
 
-# Supplementary material 
+Total carbon stocks varied between `r dataC[, round(min(meanAGC + meanSC + meanBGC, na.rm = TRUE))]` and `r dataC[, round(max(meanAGC + meanSC + meanBGC, na.rm = TRUE))]` Mg C/ha, with an average of `r dataC[, round(mean(meanAGC + meanSC + meanBGC, na.rm = TRUE))]` Mg C/ha and a coefficient of variation of `r dataC[, round(100*sd(meanAGC + meanSC + meanBGC, na.rm = TRUE)/mean(meanAGC + meanSC + meanBGC, na.rm = TRUE))]`%  (Table 1; Figure 2). The AFS with the lowest total carbon stocks was the `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, ID_AF[which.min(V1)]]` with an average of `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, round(min(V1))]` Mg C/ha; the AFS with the highest total carbon stocks was the `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, ID_AF[which.max(V1)]]` with an average of `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, round(max(V1))]` Mg C/ha (Table 1; Figure 2).
+
+## Aboveground carbon
+
+AGC stocks varied between `r dataC[, round(min(meanAGC, na.rm = TRUE))]` and `r dataC[, round(max(meanAGC, na.rm = TRUE))]` MgC/ha, with an average of `r dataC[, round(mean(meanAGC, na.rm = TRUE))]` MgC/ha and a coefficient of variation of `r dataC[, round(100*sd(meanAGC, na.rm = TRUE)/mean(meanAGC, na.rm = TRUE))]`%  (Table 1; Figure 2). In line with our hypothesis (H1a), AGC stocks varied significantly between AFS (ANOVA p-value: `r tab_anov$p[tab_anov$response=="AGC" & tab_anov$ind_var == "AF"]`), but not between site (ANOVA p-value = `r tab_anov$p[tab_anov$response=="AGC" & tab_anov$ind_var == "SUCO"]`, Table 2). The AFS with the lowest AGC stocks was the `r dataC[, mean(meanAGC, na.rm = TRUE), .(ID_AF)][, ID_AF[which.min(V1)]]` with an average of `r dataC[, mean(meanAGC, na.rm = TRUE), .(ID_AF)][, round(min(V1))]` Mg C/ha; the AFS with the highest AGC stocks was the `r dataC[, mean(meanAGC, na.rm = TRUE), .(ID_AF)][, ID_AF[which.max(V1)]]` with an average of `r dataC[, mean(meanAGC , na.rm = TRUE), .(ID_AF)][, round(max(V1))]` Mg C/ha (Table 1; Figure 2).
+
+## Soil organic carbon
+
+SOC stocks varied between `r dataC[, round(min(meanSC, na.rm = TRUE))]` and `r dataC[, round(max(meanSC, na.rm = TRUE))]` MgC/ha, with an average of `r dataC[, round(mean(meanSC, na.rm = TRUE))]` MgC/ha and a coefficient of variation of `r dataC[, round(100*sd(meanSC, na.rm = TRUE)/mean(meanSC, na.rm = TRUE))]`%  (Table 1; Figure 2). In disagreement with our hypothesis (H1b), no significant differences in SOC were observed between the five AFS studied (ANOVA p-value: `r tab_anov$p[tab_anov$response=="SOC" & tab_anov$ind_var == "AF"]`). However, the measured SOC stocks differed from suco to suco (ANOVA p-value: `r tab_anov$p[tab_anov$response=="SOC" & tab_anov$ind_var == "SUCO"]`; Table 2). The SOC stocks in Gariuai were on average higher (`r dataC[ID_SUCO=="G", round(mean(meanSC, na.rm = TRUE))]` Mg C/ha) than those in Osso Luga (`r dataC[ID_SUCO=="S", round(mean(meanSC, na.rm = TRUE))]` Mg C/ha; Figure 2).
+
+## Relationship between AGC and SOC
+
+The relationship between AGC and SOC was not significant (p-value = `r round(dfreg$pvalue[grepl("30", dfreg$depth)], 2)`; Figure 3), as hypothesized (H2b). Contrary to our hypothesis (H2a), this relationship remained insignificant (p-value = `r round(dfreg$pvalue[grepl("10", dfreg$depth)], 2)`) when tested with SOC stocks in the topsoil layer (0-10 cm). The proportion of variance explained by the linear mixed models were `r round(dfreg$R2_cond[grepl("30", dfreg$depth)]*100)`% and `r round(dfreg$R2_cond[grepl("10", dfreg$depth)]*100)`% for 0-30 and 0-10 cm depths respectively, but a marginal R$^2$ of just `r round(dfreg$R2_marg[grepl("30", dfreg$depth)]*100, 1`% and `r round(dfreg$R2_marg[grepl("10", dfreg$depth)]*100, 1)`% respectively when only the fixed effect was considered (Figure 3). Overall, AGC stocks were a poor predictor of SOC stocks.
+
+
+# Supplementary material
 
 ```{r fig-distr-sol, fig.height = 5, fig.width = 15}
 ## diagnostic données sol pour marguerite
-g1 <- ggplot(data_soil, aes(x = CF*100, col = SAMPLE_DEPTH)) + 
+g1 <- ggplot(data_soil, aes(x = CF*100, col = SAMPLE_DEPTH)) +
   geom_histogram(bins = 30) +
-  geom_text(data = subset(data_soil, CF > 0.3), angle = -60, 
-            aes(x = CF*100-5, y = 15, 
+  geom_text(data = subset(data_soil, CF > 0.3), angle = -60,
+            aes(x = CF*100-5, y = 15,
                 label = paste("Village:", ID_VILLAGE, "/ SAF:", ID_TYPE, "/ Plot:", N_PLOT))) +
-  labs(x = "Elements grossiers (% du volume)", 
-       y = "Nombre d'échantillons (site x profondeur)", 
-       col = "Profondeur (cm)") + 
+  labs(x = "Elements grossiers (% du volume)",
+       y = "Nombre d'échantillons (site x profondeur)",
+       col = "Profondeur (cm)") +
   scale_y_continuous(expand = expand_scale(0, 0)) +
   theme_classic()  +
   theme(legend.position = c(0.8, 0.9))
 
-g2 <- ggplot(data_soil, aes(x = Corg, col = SAMPLE_DEPTH)) + 
+g2 <- ggplot(data_soil, aes(x = Corg, col = SAMPLE_DEPTH)) +
   geom_histogram(bins = 20) +
-  labs(x = "Teneur en carbone (%)", 
-       y = "Nombre d'échantillons (site x profondeur)", 
-       col = "Profondeur (cm)") + 
+  labs(x = "Teneur en carbone (%)",
+       y = "Nombre d'échantillons (site x profondeur)",
+       col = "Profondeur (cm)") +
   scale_y_continuous(expand = expand_scale(0, 0)) +
   theme_classic() +
   theme(legend.position = c(0.8, 0.9))
 
-g3 <- ggplot(data_soil, aes(x = BD, col = SAMPLE_DEPTH)) + 
+g3 <- ggplot(data_soil, aes(x = BD, col = SAMPLE_DEPTH)) +
   geom_histogram(bins = 20) +
-  labs(x = "Densité apparente", 
-       y = "Nombre d'échantillons (site x profondeur)", 
-       col = "Profondeur (cm)") + 
+  labs(x = "Densité apparente",
+       y = "Nombre d'échantillons (site x profondeur)",
+       col = "Profondeur (cm)") +
   scale_y_continuous(expand = expand_scale(0, 0)) +
   theme_classic()+
   theme(legend.position = c(0.8, 0.9))
@@ -578,14 +564,14 @@ ggsave("figures/fig-distr-sol.pdf", height = 5, width = 15)
 ```{r fig-clay-corg, fig.height = 4, fig.width = 6}
 ggplot(data_soil, aes(x = as.numeric(CLAY), y = Corg, col = SAMPLE_DEPTH)) +
   geom_point() +
-  labs(col = "Profondeur (cm)", x = "Argile (%)", y = "Teneur en carbone (%)") + 
+  labs(col = "Profondeur (cm)", x = "Argile (%)", y = "Teneur en carbone (%)") +
   geom_smooth(method = "lm") +
   theme_classic()
 ggsave("figures/fig-clay-corg.pdf", height = 4, width = 6)
 ```
 
 ```{r test-ac-soc-by-depth}
-data_soil_agc <- merge(data_soil[, c("N_PLOT", "SAMPLE_DEPTH", "Cstock")], 
+data_soil_agc <- merge(data_soil[, c("N_PLOT", "SAMPLE_DEPTH", "Cstock")],
                        dataC[, c("N_PLOT","ID_AF", "ID_VILLAGE",  "meanAGC")], by = "N_PLOT")
 
 ggplot(data_soil_agc, aes(x = meanAGC, y = Cstock, col = SAMPLE_DEPTH)) +
@@ -630,27 +616,27 @@ mult_values <- which(sapply(strsplit(litval$value, ",|and"), length)>1)
 new_rows = lapply(mult_values, function(i){
   vals = as.numeric(strsplit(litval$value[i], ",|and")[[1]])
   vals = vals[!is.na(vals)]
-  
+
   x = matrix(litval[i,], ncol = ncol(litval), nrow = length(vals), byrow = TRUE)
   x[, colnames(litval) == "value"] = vals
-  
+
   x = as.data.frame(x)
   colnames(x) = colnames(litval)
   return(x)
 }
 )
 
-new_rows = do.call(rbind, new_rows) 
+new_rows = do.call(rbind, new_rows)
 
 litval2 = rbind(new_rows, litval[-mult_values,])
-litval = data.frame(system = unlist(litval2$system), 
-                    pool = unlist(litval2$pool), 
-                    value = unlist(litval2$value), 
-                    location = unlist(litval2$location), 
-                    ref = unlist(litval2$ref), 
+litval = data.frame(system = unlist(litval2$system),
+                    pool = unlist(litval2$pool),
+                    value = unlist(litval2$value),
+                    location = unlist(litval2$location),
+                    ref = unlist(litval2$ref),
                     main_crop = unlist(litval2$main_crop),
-                    main_per = unlist(litval2$main_per), 
-                    ID_AF = unlist(litval2$ID_AF), 
+                    main_per = unlist(litval2$main_per),
+                    ID_AF = unlist(litval2$ID_AF),
                     var = unlist(litval2$var))
 
 ```
@@ -663,20 +649,20 @@ sheets1 = grep("INV", readxl::excel_sheets("data/DATA_BIOMASS_TL_LARGE.xlsx"), v
 sheets2 = grep("INV", readxl::excel_sheets("data/DATA_BIOMASS_TL_SHORT.xlsx"), value = TRUE)
 
 vern1 <- lapply(sheets1, \(x){
-  df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x) 
-  df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |> 
+  df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x)
+  df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |>
     unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
 })
 vern2 <- lapply(sheets2, \(x){
-    df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x) 
-  df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |> 
+    df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x)
+  df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |>
     unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
 })
 
 vern = rbind(rbindlist(vern1), rbindlist(vern2)) |>  unique()
 vern <- subset(vern, !is.na(TETUM_NAME) & !is.na(SCIENTIFIC_NAME))
 
-## correct scientific names 
+## correct scientific names
 vern[, c("genus", "species") := tstrsplit(SCIENTIFIC_NAME, " ")[1:2]]
 vern[species %in% c("sp", "sp."), species := NA]
 vern[species == "purpuroides", species := NA]
@@ -696,6 +682,6 @@ vern = vern[!(tetum %in% dupl_tetum & is.na(speciesCorrected))]
 setorder(vern, tetum)
 
 vern = vern[, .(latin = paste(latin, collapse = ", ")), .(tetum)]
-write.csv(vern, "data/species-correspondance.csv", row.names = FALSE) 
+write.csv(vern, "data/species-correspondance.csv", row.names = FALSE)
 ```
 # References
