@@ -520,12 +520,12 @@ SOC stocks varied between `r dataC[, round(min(meanSC, na.rm = TRUE))]` and `r d
 
 ## Relationship between AGC and SOC
 
-The relationship between AGC and SOC was not significant (p-value = `r round(dfreg$pvalue[grepl("30", dfreg$depth)], 2)`; Figure 3), as hypothesized (H2b). Contrary to our hypothesis (H2a), this relationship remained insignificant (p-value = `r round(dfreg$pvalue[grepl("10", dfreg$depth)], 2)`) when tested with SOC stocks in the topsoil layer (0-10 cm). The proportion of variance explained by the linear mixed models were `r round(dfreg$R2_cond[grepl("30", dfreg$depth)]*100)`% and `r round(dfreg$R2_cond[grepl("10", dfreg$depth)]*100)`% for 0-30 and 0-10 cm depths respectively, but a marginal R$^2$ of just `r round(dfreg$R2_marg[grepl("30", dfreg$depth)]*100, 1`% and `r round(dfreg$R2_marg[grepl("10", dfreg$depth)]*100, 1)`% respectively when only the fixed effect was considered (Figure 3). Overall, AGC stocks were a poor predictor of SOC stocks.
+The relationship between AGC and SOC was not significant (p-value = `r round(dfreg$pvalue[grepl("30", dfreg$depth)], 2)`; Figure 3), as hypothesized (H2b). Contrary to our hypothesis (H2a), this relationship remained insignificant (p-value = `r round(dfreg$pvalue[grepl("10", dfreg$depth)], 2)`) when tested with SOC stocks in the topsoil layer (0-10 cm). The proportion of variance explained by the linear mixed models were `r round(dfreg$R2_cond[grepl("30", dfreg$depth)]*100)`% and `r round(dfreg$R2_cond[grepl("10", dfreg$depth)]*100)`% for 0-30 and 0-10 cm depths respectively, but a marginal R$^2$ of just `r round(dfreg$R2_marg[grepl("30", dfreg$depth)]*100, 1)`% and `r round(dfreg$R2_marg[grepl("10", dfreg$depth)]*100, 1)`% respectively when only the fixed effect was considered (Figure 3). Overall, AGC stocks were a poor predictor of SOC stocks.
 
 
 # Supplementary material
 
-```{r fig-distr-sol, fig.height = 5, fig.width = 15}
+```{r sfig-distr-sol, fig.height = 5, fig.width = 15}
 ## diagnostic données sol pour marguerite
 g1 <- ggplot(data_soil, aes(x = CF*100, col = SAMPLE_DEPTH)) +
   geom_histogram(bins = 30) +
@@ -558,16 +558,29 @@ g3 <- ggplot(data_soil, aes(x = BD, col = SAMPLE_DEPTH)) +
   theme(legend.position = c(0.8, 0.9))
 
 ggpubr::ggarrange(g1, g2, g3, labels = "auto", nrow = 1)
-ggsave("figures/fig-distr-sol.pdf", height = 5, width = 15)
+ggsave("figures/fig-distr-sol.png", height = 5, width = 15)
 ```
 
-```{r fig-clay-corg, fig.height = 4, fig.width = 6}
-ggplot(data_soil, aes(x = as.numeric(CLAY), y = Corg, col = SAMPLE_DEPTH)) +
+```{r sfig-clay-corg, fig.height = 4, fig.width = 6}
+data_soil[, village := substr(ID_VILLAGE, 1, 1)]
+data_soil[village == "S", village := "Osso Luga"]
+data_soil[village == "G", village := "Gariuai"]
+
+ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY), y = Corg, col = SAMPLE_DEPTH)) +
   geom_point() +
-  labs(col = "Profondeur (cm)", x = "Argile (%)", y = "Teneur en carbone (%)") +
-  geom_smooth(method = "lm") +
+  labs(col = "Soil depth (cm)", x = "Clay content (%)", y = "SOC content (%)") +
+  scale_color_brewer(type = "qual") +
+  # geom_smooth(method = "lm") +
   theme_classic()
 ggsave("figures/fig-clay-corg.pdf", height = 4, width = 6)
+
+ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY) + as.numeric(`FINE SILT`), y = Corg, col = SAMPLE_DEPTH, shape = village)) +
+  geom_point() +
+  labs(col = "Soil depth (cm)", x = "Clay and fine silt content (%)", y = "SOC content (%)", shape = "Site") +
+  scale_color_brewer(type = "qual") +
+  # geom_smooth(method = "lm") +
+  theme_classic()
+ggsave("figures/fig-clay-silt-corg.png", height = 4, width = 6)
 ```
 
 ```{r test-ac-soc-by-depth}
@@ -641,10 +654,71 @@ litval = data.frame(system = unlist(litval2$system),
 
 ```
 
+### Effect of altitude on SOC stocks
+
+```{r sfig-altitude}
+dataCelev = merge(dataC[, c("N_PLOT", "meanSC", "uprSC", "lwrSC")], 
+                 data_plot[, c("N_PLOT", "elev", "village")], by = "N_PLOT")
+
+ggplot(dataCelev, aes(x = elev, y = meanSC, col = village)) +
+  geom_pointrange(aes(ymin=lwrSC, ymax = uprSC)) + 
+  theme_classic() +
+  labs(x = "Elevation (m)", y = "SOC stocks (Mg C/ha)", col = "Site")
+ggsave("figures/soc-elev.png", height = 4, width = 6)
+```
+
+### Site soil characteristics
+
+```{r stab-site-soil}
+data_soil$silt <- as.numeric(data_soil$`FINE SILT`) + as.numeric(data_soil$`COARSE SILT`)
+data_soil$sand <- as.numeric(data_soil$`FINE SAND`) + as.numeric(data_soil$`COARSE SAND`)
+
+vars = c("Corg\n", "N", "Corg_N", "CLAY", "silt", "sand", "pH\n", "CA", "Mg", "K", "Na", "CEC")
+data_soil_plot = melt(data_soil, id.vars = c("village", "N_PLOT", "SAMPLE_DEPTH"), 
+                      measure.vars = c("Corg\n", "N", "Corg_N", "CLAY", "silt", "sand", "pH\n", "Ca", "Mg\n", "K", "Na", "CEC\n"))
+
+data_soil_plot[, variable := gsub("\n", "", variable)]
+
+# when value below detection limit: use half of detection value
+data_soil_plot[grepl("LD", value), value := as.numeric(strsplit(value, "=")[[1]][2])/2]
+data_soil_plot[, value := as.numeric(value)]
+
+# remove NA values
+data_soil_plot = subset(data_soil_plot, !is.na(value))
+
+# simulation 100 values per plot, soil depth and variable with a 10% coefficient
+# of variation (CV value from lab)
+data_soil_plot_simu = 
+  data_soil_plot[, .(
+    value = rnorm(100, value, sd = 0.1*value), n = 1:100), 
+    .(village, N_PLOT, SAMPLE_DEPTH, variable)]
+
+# bootstrap plot values to get mean value at the site level (for each simulation)
+data_soil_site_simu = 
+  data_soil_plot_simu[, .(
+    value = mean(sample(value, length(value), replace = TRUE))),
+    .(village, variable, n)]
+
+# calculate mean and 95% confidence interval at site level
+data_soil_site  = data_soil_site_simu[, .(
+  value = paste0(
+  signif(mean(value), 3), " (",
+  signif(quantile(value, 0.025), 3), "-", 
+  signif(quantile(value, 0.975), 3), ")"
+  )), 
+  .(village, variable)]
+
+# change table shape to have one column per variable
+data_soil_site = dcast(data_soil_site, village ~ variable, value.var = "value")
+data_soil_site = data_soil_site[, c("village", "CLAY", "silt", "sand", "Corg", "N", "Corg_N", "pH", "Ca", "K", "Mg", "Na", "CEC")]
+colnames(data_soil_site) = c("Site", "Clay (%)", "Silt (%)", "Sand (%)", "SOC content (%)","N", "C/N", "pH", "Ca", "K", "Mg", "Na", "CEC")
+
+write.csv(data_soil_site, "data/soil_site.csv", row.names = FALSE)
+```
 
 ### Botanical identification from Tetum names
 
-```{r tetum-names}
+```{r tab-tetum-names}
 sheets1 = grep("INV", readxl::excel_sheets("data/DATA_BIOMASS_TL_LARGE.xlsx"), value = TRUE)
 sheets2 = grep("INV", readxl::excel_sheets("data/DATA_BIOMASS_TL_SHORT.xlsx"), value = TRUE)
 
@@ -684,4 +758,11 @@ setorder(vern, tetum)
 vern = vern[, .(latin = paste(latin, collapse = ", ")), .(tetum)]
 write.csv(vern, "data/species-correspondance.csv", row.names = FALSE)
 ```
+
+```{r timer-leste-c-footprint-lulcc}
+df_eluc <- read_excel("C:/Users/piponiot-laroche/Downloads/National_LandUseChange_Carbon_Emissions_2023v1.0.xlsx", sheet = "OSCAR") 
+colnames(df_eluc) <- df_eluc[7,]
+df_eluc <- df_eluc[-(1:8),colnames(df_eluc) %in% c("unit: Tg C/year", "Timor-Leste")]
+```
+
 # References
