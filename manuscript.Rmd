@@ -93,45 +93,6 @@ data_soil <- merge(data_soil, data_soil2, by = c("N_PLOT", "SAMPLE_DEPTH"), all=
 data.table::setDT(data_soil)
 ```
 
-```{r test-bd-pedotransfer}
-# bulk density from pedotransfer function: Minasny and Hartemink, 2011
-
-data_soil$depth_mean <- unlist(lapply(strsplit(data_soil$SAMPLE_DEPTH, "-"), function(x) mean(as.numeric(x))))
-data_soil$depth_max <- unlist(lapply(strsplit(data_soil$SAMPLE_DEPTH, "-"), function(x) as.numeric(x[2])))
-
-data_soil$sand <- as.numeric(data_soil$`FINE SAND`) + as.numeric(data_soil$`COARSE SAND`)/100
-
-data_soil$BDmin <- 
-  0.935 + 
-  0.049 * log(data_soil$depth_mean) + 
-  0.0055 * data_soil$sand + 
-  0.000065 * (data_soil$sand - 38.96)^2
-
-data_soil$BDptf <- 
-  100/(
-    data_soil$OM/0.224 + 
-      (100 - data_soil$OM)/data_soil$BDmin
-  )
-
-# g1 = ggplot(data_soil, aes(x = BD, y = BDptf, color = ID_TYPE)) + 
-#   geom_abline(slope = 1, intercept = 0, lty=2) + 
-#   geom_point() + 
-#   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
-#   lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
-#   facet_wrap(~ID_VILLAGE)
-# #+
-#   # theme(legend.position = "none")
-# g2 = ggplot(data_soil, aes(x = BD, y = BDmin, color = SAMPLE_DEPTH)) +
-#   geom_abline(slope = 1, intercept = 0, lty=2) + 
-#   geom_point() + 
-#   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
-#   lims(x = c(0.8, 1.6), y = c(0.8, 1.6)) +
-#   theme(legend.position = c(0.2, 0.8))
-# 
-# ggpubr::ggarrange(g1, g2) 
-# ggsave("figures/pedotransfer-test.png", height = 5, width = 10)
-```
-
 ```{r add-missing-values}
 ## add intermediate soil carbon in 10-20 cm depth (for now: no value)
 data_soil[, Corg := mean(`Corg\n`, na.rm = TRUE), .(N_PLOT)]
@@ -145,17 +106,16 @@ data_soil[is.na(CF), CF := CF_site]
 ```{r total-soc}
 # calculate total soil carbon stock per depth
 data_soil[, c("h0", "h1") := lapply(data.table::tstrsplit(SAMPLE_DEPTH, "-"), as.numeric)]
-data_soil[, Cstock :=          ## in Mg/ha
-            (h1 - h0) * 1e8 *  ## equivalent volume of a 1 ha soil sample, in cm3/ha
-            BD *               ## bulk density 
-            Corg/100 *         ## carbon organic content in soil
-            (1-CF) *           ## remove coarse fraction
-            1e-6               ## convert from g/ha to Mg/ha
+data_soil[, Cstock :=             ## in Mg/ha
+            (h1 - h0) * 1e8 *     ## equivalent volume of a 1 ha soil sample, in cm3/ha
+            Corg/100 *            ## carbon organic content in fine soil (unitless)
+            (Sample_DRY * 1e-6) * ## mass of the fine fraction of the soil (Mg)
+            (1/V_cylinder)        ## 1/volume of the cylinder, in cm-3
 ]
 
 data_soil_C <-
   data_soil[, .(
-    meanSC = sum(Cstock),
+    meanSOC = sum(Cstock),
     SC10 = Cstock[SAMPLE_DEPTH == "0-10"],
     clay = mean(as.numeric(CLAY), na.rm = TRUE)
   ), .(N_PLOT)]
@@ -165,29 +125,24 @@ setkey(data_soil_C, "N_PLOT")
 
 ```{r soc-error-propagation}
 ## error propagation using a Monte Carlo method -------------
-data_soil_unc = data_soil[, .(BD = rnorm(1000, BD, BD*0.1), 
+data_soil_unc = data_soil[, .(mass = rnorm(1000, Sample_DRY, Sample_DRY*0.1), 
                               Corg = rnorm(1000, Corg, Corg*0.12), 
-                              CF = rnorm(1000, CF, CF*0.15), 
                               iter = 1:1000), 
                           .(N_PLOT, SAMPLE_DEPTH, h1, h0)]
 
 data_soil_unc = data_soil_unc[, .(
-  Cstock = sum(
-    (h1 - h0) * 1e8 *  
-      BD * Corg/100 * (1-CF) * 1e-6  
-  ), 
-  Cstock10 = (
-    (h1 - h0) * 1e8 *  
-      BD * Corg/100 * (1-CF) * 1e-6  
-  )[SAMPLE_DEPTH == "0-10"]),
+  Cstock = sum((h1 - h0) * 1e8 / 250 * Corg/100 * (mass * 1e-6)), 
+  Cstock10 = ((h1 - h0) * 1e8 / 250 * Corg/100 * (mass * 1e-6))[SAMPLE_DEPTH == "0-10"]),
   .(N_PLOT, iter)
 ]
 
-data_soil_unc = data_soil_unc[, .(
-  lwrSC = quantile(Cstock, 0.025), 
-  uprSC = quantile(Cstock, 0.975),
-  lwrSC10 = quantile(Cstock10, 0.025), 
-  uprSC10 = quantile(Cstock10, 0.975)), 
+data_soil_quantile = data_soil_unc[, .(
+  lwrSOC = quantile(Cstock, 0.025), 
+  medSOC = quantile(Cstock10, 0.5),
+  uprSOC = quantile(Cstock, 0.975),
+  lwrSOC10 = quantile(Cstock10, 0.025), 
+  medSOC10 = quantile(Cstock10, 0.5),
+  uprSOC10 = quantile(Cstock10, 0.975)), 
   .(N_PLOT)]
 ```
 
@@ -196,7 +151,7 @@ data_soil_unc = data_soil_unc[, .(
 dataC <- merge(data_agb, data_soil_C, by = "N_PLOT", all=TRUE)
 
 # add soil carbon uncertainty
-dataC <- merge(dataC, data_soil_unc, all=TRUE)
+dataC <- merge(dataC, data_soil_quantile, all=TRUE)
 
 dataC[N_PLOT==6, `:=`(ID_VILLAGE = "GD", ID_AF = "CF")]
 
@@ -206,35 +161,67 @@ dataC$ID_AF <- factor(dataC$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
 
 # Results
 
-```{r tab-mean, results = "show"}
-# average values per village and SAF type
-dataC_mean <- dataC[, .(AGC = paste0(round(mean(meanAGC[!is.na(meanAGC)]), 2), " +/- ", round(sd(meanAGC[!is.na(meanAGC)])/sqrt(length(meanAGC[!is.na(meanAGC)])), 2)), 
-                        SC = paste0(round(mean(meanSC[!is.na(meanSC)]), 2), " +/- ", round(sd(meanSC[!is.na(meanSC)])/sqrt(length(meanSC[!is.na(meanSC)])), 2))),
-                    .(ID_AF)]
-dataC_mean$ID_AF <- factor(dataC_mean$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
-dataC_mean = dataC_mean[order(dataC_mean$ID_AF),]
-knitr::kable(dataC_mean, col.names = c("Agroforestry system", "Aboveground carbon (Mg/ha)", "Soil organic carbon (Mg/ha)"))
-write.csv(dataC_mean, file = "tables/C_mean_SAF.csv", row.names = FALSE)
+```{r tab-median, results = "show"}
+
+## bootstrapping 
+
+#1. prepare data
+data_agc_boot = melt(data_agb_unc, 
+                       measure.vars = c("AGC", "BGC"), 
+                       id.vars = c("ID_VILLAGE", "N_PLOT", "ID_AF", "iter"))
+
+data_soil_boot = data_soil_unc[, c("N_PLOT", "iter", "Cstock")]
+colnames(data_soil_boot)[3] = "value"
+data_soil_boot$variable = "SOC"
+data_soil_boot$iter = paste0("V", data_soil_boot$iter)
+
+data_soil_boot = merge(data_soil_boot, data_plot[, c("N_PLOT","ID_VILLAGE", "ID_AF")])
+    
+data_boot = rbind(data_agc_boot, data_soil_boot[, colnames(data_agc_boot), with = FALSE])  
+
+# 2. add total stocks
+data_boot_tot = data_boot[, .(value = sum(value), variable = "TOT"), .(ID_VILLAGE, N_PLOT, ID_AF, iter)]
+data_boot = rbind(data_boot, data_boot_tot[, colnames(data_boot), with = FALSE])
+
+data_boot[, village := substr(ID_VILLAGE, 1, 1)]
+
+# 3. bootstrap
+data_boot_saf = data_boot[, .(value = mean(sample(value, length(value), replace = TRUE))),
+    .(ID_AF, variable, iter)]
+
+# calculate median and 95% confidence interval at site level
+data_boot_saf  = data_boot_saf[, .(
+  value = paste0(
+  signif(mean(value), 3), " (",
+  signif(quantile(value, 0.025), 3), "-", 
+  signif(quantile(value, 0.975), 3), ")"
+  )), 
+  .(ID_AF, variable)]
+
+data_boot_saf = dcast(data_boot_saf, ID_AF ~ variable, value = "value")
+
+
+knitr::kable(data_boot_saf, col.names = c("Agroforestry system", "Aboveground carbon (MgC/ha)", "Belowground carbon (MgC/ha)", "Soil organic carbon (MgC/ha)", "Total carbon (MgC/ha)"))
+write.csv(data_boot_saf, file = "tables/C_median_SAF.csv", row.names = FALSE)
 ```
 
 ```{r group-comparison}
-
 dataC[, ID_SUCO := substr(ID_VILLAGE, 1, 1)]
 ## test normality of the data
 
 # log-transform data to get normal distributions (because strictly positive data)
 hist((dataC$meanAGC), breaks = 20)
-hist((dataC$meanSC))
+hist((dataC$meanSOC))
 
 # test normality
 dataC[, .(
-  shap.A = shapiro.test(log(meanAGC))$p.value, 
-  shap.S = shapiro.test(log(meanSC))$p.value
+  shap.A = shapiro.test(log(medAGC))$p.value, 
+  shap.S = shapiro.test(log(medSOC))$p.value
   ), .(ID_AF, ID_SUCO)]
 # levene test of homoscedasticity
 library(car)
-dataC[, leveneTest(log(meanAGC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
-dataC[, leveneTest(log(meanSC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
+dataC[, leveneTest(log(medAGC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
+dataC[, leveneTest(log(medSOC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
 
 # # pairwise group comparison with Tukey HSD method
 # # https://arc.lib.montana.edu/book/statistics-with-r-textbook/item/59
@@ -247,7 +234,7 @@ dataC[, leveneTest(log(meanSC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
 # plot(tuk.cld)
 
 # # soc
-# aovSOC = aov(meanSC ~ ID_AF, data = dataC)
+# aovSOC = aov(meanSOC ~ ID_AF, data = dataC)
 # tuk <- glht(aovSOC, linfct = mcp(ID_AF = "Tukey"))
 # summary(tuk)          # standard display
 # tuk.cld <- cld(tuk)   # letter-based display
@@ -273,21 +260,24 @@ dataC[, leveneTest(log(meanSC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
 ```{r tab-anova, results = "show"}
 # 2-way anova 
 dataC[, ID_SUCO := substr(ID_VILLAGE, 1, 1)]
-anov1 = anova(lm(log(meanAGC)~ID_SUCO+ID_AF, data = dataC))
-anov2 = anova(lm(log(meanSC)~ID_SUCO+ID_AF, data = dataC))
+anov1 = anova(lm(log(medAGC)~ID_SUCO+ID_AF, data = dataC))
+anov2 = anova(lm(log(medSOC)~ID_SUCO+ID_AF, data = dataC))
 tab_anov = data.frame(response = rep(c("AGC", "SOC"), each = 2), 
                       ind_var = rep(c("SUCO", "AF"), 2), 
                       p = round(c(anov1$`Pr(>F)`[1:2], anov2$`Pr(>F)`[1:2]), 3)
 )
 
 knitr::kable(tab_anov)
+write.csv(tab_anov, file = "tables/anov.csv", row.names = FALSE)
+
 ## non parametric 2 way anova: anova on ranks
 # anov1 = anova(lm(rank(meanAGC)~ID_SUCO+ID_AF, data = dataC))
-# anov2 = anova(lm(rank(meanSC)~ID_SUCO+ID_AF, data = dataC))
+# anov2 = anova(lm(rank(meanSOC)~ID_SUCO+ID_AF, data = dataC))
 # tab_anov = data.frame(response = rep(c("AGC", "SOC"), each = 2), 
 #                       ind_var = rep(c("SUCO", "AF"), 2), 
 #                       p = round(c(anov1$`Pr(>F)`[1:2], anov2$`Pr(>F)`[1:2]), 3)
 # )
+
 ```
 
 ```{r fig-1-map, fig.height =6, fig.width = 7}
@@ -359,9 +349,10 @@ g2 =
   geom_point(data = data_plot, 
              aes(x = long, y = lat), shape = 1, size = 2) + 
   # coord_equal() +
-  viridis::scale_fill_viridis(option = "D",
-                              limits = range(c(elevS$srtm_62_14, elevG$srtm_62_14))
-  ) +
+  # viridis::scale_fill_viridis(option = "D",
+  #                             limits = range(c(elevS$srtm_62_14, elevG$srtm_62_14))
+  # ) +
+  scale_fill_gradientn(colours = terrain.colors(10)) +
   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
   labs(x = NULL, y = NULL, color = NULL, fill="Elevation (m)") +
   annotate(geom = "text", label = "b", x = -Inf, y = Inf, 
@@ -370,8 +361,8 @@ g2 =
            hjust = 12, vjust = -9.8, fontface = "bold", size = 6) + 
   guides(color = FALSE, fill=guide_colorbar(title.position = "top")) +
   theme(legend.position = c(0.8, 0.85), legend.direction="horizontal", 
-        axis.title = element_blank(), 
-        axis.ticks = element_blank(), axis.text = element_blank(), 
+        axis.title = element_blank(),
+        # axis.ticks = element_blank(), axis.text = element_blank(), 
         plot.title = element_text(hjust = 0.5), 
         panel.background = element_blank()) +
   scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))+
@@ -410,7 +401,7 @@ data_plot[, .(elev = mean(elev), range_elev = paste(range(elev), collapse = " - 
 ```{r fig-2-barplot, fig.height = 5, fig.width = 6}
 ## melt data.table
 dataC_all <- melt(dataC, id.vars = c("N_PLOT", "ID_VILLAGE", "ID_AF", "village"), 
-                  measure.vars = c("meanAGC", "meanBGC", "meanSC"))
+                  measure.vars = c("meanAGC", "meanBGC", "meanSOC"))
 
 dataC_all <- dataC_all[, .(value = mean(value, na.rm = TRUE)), .(village, ID_AF, variable)]
 
@@ -420,7 +411,7 @@ dataC_all$ID_AF <- factor(dataC_all$ID_AF, levels = c("CF", "SP", "YA", "HG", "F
 
 # uncertainty fig 2: bootstrap by MC iteration?
 
-dataC_all[, variable := factor(variable, levels = c("meanAGC", "meanBGC", "meanSC"))]
+dataC_all[, variable := factor(variable, levels = c("meanAGC", "meanBGC", "meanSOC"))]
 levels(dataC_all$variable) <- c("AGC", "BGC", "SOC")
 dataC_all[, village := factor(village)]
 levels(dataC_all$village) <- c("Gariuai", "Osso Luga")
@@ -438,7 +429,7 @@ ggsave("figures/fig-carbon-stocks-stack.png", height = 5, width = 6)
 
 ```{r tab-3-reg, results = "show"}
 ## mixed effect linear regression
-lmeReg <- lmerTest::lmer(log(meanSC) ~ log(meanAGC) + (1|village), data = dataC)
+lmeReg <- lmerTest::lmer(log(meanSOC) ~ log(meanAGC) + (1|village), data = dataC)
 # Nakagawa’s R2 for mixed models
 R2 = performance::r2_nakagawa(lmeReg)
 summary(lmeReg)
@@ -468,31 +459,31 @@ dfpred = expand.grid(meanAGC = exp(seq(min(log(dataC$meanAGC), na.rm = TRUE),
                      depth = c("Soil depth: 0-30 cm", "Soil depth: 0-10 cm")) |>
   merge(dfreg[, c("depth", "intercept", "slope")], by = "depth")
 setDT(dfpred)
-dfpred[, meanSC := exp(intercept + slope * log(meanAGC))]
+dfpred[, meanSOC := exp(intercept + slope * log(meanAGC))]
 
 # change village names
 dataC[, village := factor(village)]
 levels(dataC$village) <- c("Gariuai", "Osso Luga")
 
 # stack data for figure
-dataC_30 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "meanSC", "lwrSC", "uprSC")]
+dataC_30 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "meanSOC", "lwrSOC", "uprSOC")]
 dataC_30$depth = "Soil depth: 0-30 cm"
-dataC_10 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "SC10", "lwrSC10", "uprSC10")]
+dataC_10 = dataC[, c("N_PLOT", "village", "ID_AF",  "meanAGC", "lwrAGC", "uprAGC", "SC10", "lwrSOC10", "uprSOC10")]
 dataC_10$depth = "Soil depth: 0-10 cm"
 colnames(dataC_10) = colnames(dataC_30)
 dataC_fig = rbind(dataC_10, dataC_30)
 
 ## figure
 ggplot(dataC_fig, aes(color = ID_AF)) +
-  geom_point(aes(x = meanAGC, y = meanSC, shape = village), size = 2) +
+  geom_point(aes(x = meanAGC, y = meanSOC, shape = village), size = 2) +
   geom_text(data = dfreg, aes(label = paste0("R^{2}*' (marg.) = '*", round(R2_marg, 3))),
             x = -Inf, y = Inf, hjust = -0.1, vjust = 1.2, parse = TRUE, color = 1) +
   geom_text(data = dfreg, aes(label = paste0("R^{2}*' (cond.) = '*", round(R2_cond, 3))),
             x = -Inf, y = Inf, hjust = -0.1, vjust = 2.2, parse = TRUE, color = 1) +
-  geom_linerange(aes(x = meanAGC, y = meanSC, ymin = lwrSC, ymax = uprSC)) +
-  geom_errorbarh(aes(y = meanSC, xmin = lwrAGC, xmax = uprAGC)) +
+  geom_linerange(aes(x = meanAGC, y = meanSOC, ymin = lwrSOC, ymax = uprSOC)) +
+  geom_errorbarh(aes(y = meanSOC, xmin = lwrAGC, xmax = uprAGC)) +
   # geom_abline(data = dfreg, aes(intercept = intercept, slope = slope), lty = 2) +
-  geom_line(data = dfpred, aes(x = meanAGC, y = meanSC), lty = 2, col = 1) +
+  geom_line(data = dfpred, aes(x = meanAGC, y = meanSOC), lty = 2, col = 1) +
   labs(color = "AFS", x = "AGC stocks (Mg C/ha)", y = "SOC stocks (Mg C/ha)", shape = "Site") +
   expand_limits(x = 0, y = 0) +
   scale_color_manual(values = RColorBrewer::brewer.pal(n = 6, name = 'Dark2')[-5]) +
@@ -508,7 +499,7 @@ ggsave("figures/fig-scatterplot-carbon.png", height = 4, width = 8)
 
 ## Total carbon stocks
 
-Total carbon stocks varied between `r dataC[, round(min(meanAGC + meanSC + meanBGC, na.rm = TRUE))]` and `r dataC[, round(max(meanAGC + meanSC + meanBGC, na.rm = TRUE))]` Mg C/ha, with an average of `r dataC[, round(mean(meanAGC + meanSC + meanBGC, na.rm = TRUE))]` Mg C/ha and a coefficient of variation of `r dataC[, round(100*sd(meanAGC + meanSC + meanBGC, na.rm = TRUE)/mean(meanAGC + meanSC + meanBGC, na.rm = TRUE))]`%  (Table 1; Figure 2). The AFS with the lowest total carbon stocks was the `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, ID_AF[which.min(V1)]]` with an average of `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, round(min(V1))]` Mg C/ha; the AFS with the highest total carbon stocks was the `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, ID_AF[which.max(V1)]]` with an average of `r dataC[, mean(meanAGC + meanSC + meanBGC, na.rm = TRUE), .(ID_AF)][, round(max(V1))]` Mg C/ha (Table 1; Figure 2).
+Total carbon stocks varied between `r data_boot_tot[variable=="TOT", median(value), .(N_PLOT)][,round(min(V1))]` and `r data_boot_tot[variable=="TOT", median(value), .(N_PLOT)][,round(max(V1))]` Mg C/ha, with an average of `r data_boot_tot[variable=="TOT", median(value), .(N_PLOT)][,round(mean(V1))]` Mg C/ha and a coefficient of variation of `r data_boot_tot[variable=="TOT", median(value), .(N_PLOT)][,round(sd(V1)/mean(V1)*100)]`%  (Table 1; Figure 2). The AFS with the lowest total carbon stocks was the `r data_boot_tot[variable=="TOT", median(value), .(N_PLOT,ID_AF)][, ID_AF[which.min(V1)]]` with a median of `r data_boot_tot[variable=="TOT", mean(value), .(N_PLOT,ID_AF)][, round(min(V1))]` Mg C/ha; the AFS with the highest total carbon stocks was the `r data_boot_tot[variable=="TOT", median(value), .(N_PLOT,ID_AF)][, ID_AF[which.max(V1)]]` with a median of `r data_boot_tot[variable=="TOT", median(value), .(N_PLOT,ID_AF)][, round(max(V1))]` Mg C/ha (Table 1; Figure 2).
 
 ## Aboveground carbon
 
@@ -516,7 +507,7 @@ AGC stocks varied between `r dataC[, round(min(meanAGC, na.rm = TRUE))]` and `r 
 
 ## Soil organic carbon
 
-SOC stocks varied between `r dataC[, round(min(meanSC, na.rm = TRUE))]` and `r dataC[, round(max(meanSC, na.rm = TRUE))]` MgC/ha, with an average of `r dataC[, round(mean(meanSC, na.rm = TRUE))]` MgC/ha and a coefficient of variation of `r dataC[, round(100*sd(meanSC, na.rm = TRUE)/mean(meanSC, na.rm = TRUE))]`%  (Table 1; Figure 2). In disagreement with our hypothesis (H1b), no significant differences in SOC were observed between the five AFS studied (ANOVA p-value: `r tab_anov$p[tab_anov$response=="SOC" & tab_anov$ind_var == "AF"]`). However, the measured SOC stocks differed from suco to suco (ANOVA p-value: `r tab_anov$p[tab_anov$response=="SOC" & tab_anov$ind_var == "SUCO"]`; Table 2). The SOC stocks in Gariuai were on average higher (`r dataC[ID_SUCO=="G", round(mean(meanSC, na.rm = TRUE))]` Mg C/ha) than those in Osso Luga (`r dataC[ID_SUCO=="S", round(mean(meanSC, na.rm = TRUE))]` Mg C/ha; Figure 2).
+SOC stocks varied between `r dataC[, round(min(meanSOC, na.rm = TRUE))]` and `r dataC[, round(max(meanSOC, na.rm = TRUE))]` MgC/ha, with an average of `r dataC[, round(mean(meanSOC, na.rm = TRUE))]` MgC/ha and a coefficient of variation of `r dataC[, round(100*sd(meanSOC, na.rm = TRUE)/mean(meanSOC, na.rm = TRUE))]`%  (Table 1; Figure 2). In disagreement with our hypothesis (H1b), no significant differences in SOC were observed between the five AFS studied (ANOVA p-value: `r tab_anov$p[tab_anov$response=="SOC" & tab_anov$ind_var == "AF"]`). However, the measured SOC stocks differed from suco to suco (ANOVA p-value: `r tab_anov$p[tab_anov$response=="SOC" & tab_anov$ind_var == "SUCO"]`; Table 2). The SOC stocks in Gariuai were on average higher (`r dataC[ID_SUCO=="G", round(mean(meanSOC, na.rm = TRUE))]` Mg C/ha) than those in Osso Luga (`r dataC[ID_SUCO=="S", round(mean(meanSOC, na.rm = TRUE))]` Mg C/ha; Figure 2).
 
 ## Relationship between AGC and SOC
 
@@ -566,18 +557,30 @@ data_soil[, village := substr(ID_VILLAGE, 1, 1)]
 data_soil[village == "S", village := "Osso Luga"]
 data_soil[village == "G", village := "Gariuai"]
 
+
 ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY), y = Corg, col = SAMPLE_DEPTH)) +
   geom_point() +
   labs(col = "Soil depth (cm)", x = "Clay content (%)", y = "SOC content (%)") +
   scale_color_brewer(type = "qual") +
-  # geom_smooth(method = "lm") +
+  scale_x_log10() + 
+  scale_y_log10() +
+  geom_smooth(method = "lm") +
   theme_classic()
 ggsave("figures/fig-clay-corg.pdf", height = 4, width = 6)
+
+lmerTest::lmer(
+  log(Corg) ~ log(as.numeric(CLAY) + as.numeric(`FINE SILT`)) + 
+     (1|village)+ 
+     (1|SAMPLE_DEPTH), 
+   data = data_soil[SAMPLE_DEPTH != "10-20"]) |> 
+  summary()
 
 ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY) + as.numeric(`FINE SILT`), y = Corg, col = SAMPLE_DEPTH, shape = village)) +
   geom_point() +
   labs(col = "Soil depth (cm)", x = "Clay and fine silt content (%)", y = "SOC content (%)", shape = "Site") +
   scale_color_brewer(type = "qual") +
+  # scale_x_log10() +
+  # scale_y_log10() +
   # geom_smooth(method = "lm") +
   theme_classic()
 ggsave("figures/fig-clay-silt-corg.png", height = 4, width = 6)
@@ -657,11 +660,14 @@ litval = data.frame(system = unlist(litval2$system),
 ### Effect of altitude on SOC stocks
 
 ```{r sfig-altitude}
-dataCelev = merge(dataC[, c("N_PLOT", "meanSC", "uprSC", "lwrSC")], 
+dataCelev = merge(dataC[, c("N_PLOT", "meanSOC", "uprSOC", "lwrSOC")], 
                  data_plot[, c("N_PLOT", "elev", "village")], by = "N_PLOT")
 
-ggplot(dataCelev, aes(x = elev, y = meanSC, col = village)) +
-  geom_pointrange(aes(ymin=lwrSC, ymax = uprSC)) + 
+lmerTest::lmer(log(meanSOC) ~ log(elev) + (1|village), data = dataCelev) |> 
+  summary()
+
+ggplot(dataCelev, aes(x = elev, y = meanSOC, col = village)) +
+  geom_pointrange(aes(ymin=lwrSOC, ymax = uprSOC)) + 
   theme_classic() +
   labs(x = "Elevation (m)", y = "SOC stocks (Mg C/ha)", col = "Site")
 ggsave("figures/soc-elev.png", height = 4, width = 6)
@@ -686,11 +692,11 @@ data_soil_plot[, value := as.numeric(value)]
 # remove NA values
 data_soil_plot = subset(data_soil_plot, !is.na(value))
 
-# simulation 100 values per plot, soil depth and variable with a 10% coefficient
+# simulation 100 values per plot, soil depth and variable with a 12% coefficient
 # of variation (CV value from lab)
 data_soil_plot_simu = 
   data_soil_plot[, .(
-    value = rnorm(100, value, sd = 0.1*value), n = 1:100), 
+    value = rnorm(100, value, sd = 0.12*value), n = 1:100), 
     .(village, N_PLOT, SAMPLE_DEPTH, variable)]
 
 # bootstrap plot values to get mean value at the site level (for each simulation)
