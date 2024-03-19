@@ -1,7 +1,7 @@
 ---
 title: "Traditional agroforestry systems in Timor-Leste can store large amounts of carbon in both soil and biomass"
 author: "Marguerite Cogné, Régis Peltier, Vincent Freycon, Alexis Toumazeau, Camille Piponiot"
-date: "2023-05-10"
+date: "2024-03-19"
 output: 
   bookdown::word_document2:
   fig_caption: yes
@@ -10,7 +10,7 @@ bibliography: references.bib
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "hide", tinytex.clean = FALSE)
-packages_needed = c("ggplot2", "dataverse", "readxl", "data.table")
+packages_needed = c("ggplot2", "readxl", "data.table", "knitr")
 
 packages_to_install = packages_needed[!( packages_needed %in% rownames(installed.packages()))]
 
@@ -20,40 +20,23 @@ if (length(packages_to_install) > 0)
 lapply(packages_needed, require, character.only = TRUE)
 ```
 
+# Abstract
+
+Agroforestry has the potential to make agriculture more resilient while improving carbon sequestration by incorporating trees and other woody perennials into agricultural fields and diversifying agricultural landscapes. Traditional agricultural systems in tropical areas often include trees, but their carbon sequestration potential is not always well described, hindering their potential inclusion in climate change mitigation strategies. In this study, we quantified carbon storage in both vegetation biomass and soil in five traditional agroforestry systems (AFS) in Timor-Leste:  cropping systems with fallow, silvopastoral systems, young agroforests, home gardens and forest gardens. Our results show that these traditional AFS store large amounts of carbon: the AFS with the highest carbon stocks (forest gardens) stored an average of 255 MgC/ha, similar to an old-growth tropical forest. Biomass carbon was strongly dependent on the type of AFS (which differed in tree cover), while soil carbon was less variable between AFS but more dependent on site. We found no relationship between the amount of carbon stored in biomass and soil. Our results highlight the high diversity of traditional agroforestry systems in Timor-Leste and their high capacity to store carbon.
+
 # Introduction
 
-Agricultural expansion has been the main driver of tropical deforestation over the past half century [@Pendrill2022;@Gibbs2010;@Rudel2009], resulting in large greenhouse gas emissions [approximately 2.6 gigatonnes CO_2_e/yr over 2010-2014; @Pendrill2019]. The demand for tropical agricultural land is expected to continue to increase in the tropics as the population grows [@UN2022]. In addition, tropical areas are expected to be disproportionately affected by deforestation and climate change, putting their agriculture at risk [@Lawrence2015]. There is therefore an urgent need to promote tropical agricultural landscapes that are both more resilient to climate change, while maintaining high productivity and ecological value [@Harvey2014]. In particular, increasing the carbon stored in the soil and vegetation of agricultural landscapes could be an effective way to mitigate climate change while increasing the resilience of the food production system [@Lal2004].
+Agricultural expansion has been the main driver of tropical deforestation over the past half century [@Pendrill2022;@Gibbs2010;@Rudel2009], resulting in large greenhouse gas emissions [approximately 2.6 gigatonnes CO2e/yr over 2010-2014; @Pendrill2019]. The demand for tropical agricultural land is expected to continue to increase as the population grows [@UN2022]. In addition, tropical areas are expected to be disproportionately affected by climate change, putting their agriculture and food systems at risk [@Lawrence2015]. There is therefore an urgent need to promote tropical agricultural landscapes that are both more resilient to climate change, while maintaining high productivity and ecological value [@Harvey2014]. In particular, increasing the carbon stored in the soil and vegetation of agricultural landscapes could be an effective way to mitigate climate change while increasing the resilience of the food production system [@Lal2004;@Minasny2017].
 
-Agroforestry has attracted attention in recent decades as a set of effective agricultural practices that could contribute to climate change mitigation and adaptation [@Verchot2007]. Agroforestry is a collective name for land use systems and technologies where woody perennials (trees, shrubs, palms, bamboo, etc.) are deliberately used on the same land management units as agricultural crops and/or animals, in some form of spatial arrangement or temporal sequence [@Lundgren1982]. Agroforestry allows for diversification of agricultural production, making agricultural systems more resilient [@Duffy2021]; it also increases the carbon sequestration in the vegetation but also in the soil [@DeStefano2018].  
+Agroforestry has attracted attention in recent decades as a set of effective agricultural practices that could contribute to climate change mitigation and adaptation [@Albrecht2003;@Verchot2007;@Lasco2014;@Cardinael2021]. Agroforestry is a collective name for land use systems and technologies where woody perennials (trees, shrubs, bamboos, creepers, etc.) are deliberately used on the same land management units as agricultural crops and/or animals, in some form of spatial arrangement or temporal sequence [@Lundgren1982]. Agroforestry allows for diversification of agricultural production, making agricultural systems more resilient [@Duffy2021;@Terasaki2023]. 
 
+Agroforestry systems (AFS) have the potential to store large amounts of carbon in the vegetation and soil, and this carbon storage capacity depends on the characteristics of AFS considered [@Albrecht2003;@Feliciano2018]. As trees store large amounts of carbon, the carbon stored in the vegetation of AFS is largely dependent on the number and size of trees in the system [@Ma2020]. However, the effect of AFS on soil organic carbon (SOC) has been relatively little studied [@Beillouin2021], is more variable and depends on a number of factors. Although AFS appear to increase SOC stocks overall, some AFS such as woodlots (i.e. planting trees with intercropping during the establishment phase) may decrease SOC compared to non-AFS, while AFS such as silvopastoral systems have been shown to strongly increase SOC stocks [@Feliciano2018]. Other factors such as climate and previous land use type have also been shown to strongly influence SOC in AFS, which may explain the variability of observations reported in the literature [@Feliciano2018;@Ma2020;@Martin2020]. Furthermore, the relationship between the amount of carbon stored in aboveground vegetation and soil in AFS could only be demonstrated for the topsoil layer [< 10 cm; @Ma2020]. 
 
-Carbon stocks in AFS [VF]
+Although AFS can make agriculture more resilient while improving its carbon footprint, poor adaptation to the local context can explain many failures to introduce new agroforestry techniques [@Coe2014]. Conversely, some traditional agroforestry techniques have evolved in a particular context (biophysical, social and economic) and are therefore adapted to it [@Gouyon1993;@Aumeeruddy1994;@Peltier1996]. Moreover, traditional small-scale AFS typically retain high levels of biodiversity, making them key elements for biodiversity conservation in the tropics [@Perfecto2008;@Torquebiau1992]. A better understanding of traditional agroforestry practices and their ecological characteristics could provide better support for the local development of agroforestry.
 
-Importance of the ecological/social context in the success of agroforestry techniques - existence of traditional agroforestry techniques that could be more adapted to local conditions, [MC]
-Agroforestry needs to be adapted to the context [(Coe et al., 2014, Cur Opinion in Env Sust) @Coe2014]
+In Timor-Leste, a large proportion of the population depends on agriculture for their livelihoods, but food security is threatened by population growth, increasing pressure on natural resources, and an increasingly variable climate with an unreliable rainfall regime [@WB2009;@Molyneux2012]. In this context, productive, resilient and sustainable agriculture is critical for the country, and agroforestry has been presented as a potential solution to many of the challenges facing Timorese agriculture [@Paudel2022;@Cogne2024]. Although trees already form a large part of traditional agricultural systems in Timor-Leste [@Paudel2022;@Cogne2024], they have received little attention and, to our knowledge, no study has quantified carbon storage in traditional Timorese AFS. Better quantification of these carbon stocks would improve the understanding of the ecological importance of these AFS at both local and global scales, and help to integrate them into national and international climate change mitigation initiatives.
 
-Existence of traditional agroforestry systems [examples from Marguerite’s intro]
-
-Context in Timor Leste: current knowledge on their agroforestry practices + knowledge gap [MC]
-
-Local typology of production systems and why it is not adapted to traditional agroforestry
-
-No prior description of traditional agroforestry systems in TL
-
-In Timor Leste, a typology of production systems taking into account different agroecological zoning was carried out in 2017 based on the results of the 2010 national census (R. Williams et al, 2018). However, this typology does not highlight the agroforestry component of Timorese agriculture by focusing on other differentiating criteria such as livestock, subsistence crops (rice) or the island's historical cash crops (coconut, coffee).
-
-Need to better understand how these systems work and quantify their carbon storage to include them in climate change mitigation policies 
-Research questions  [VF]
-
-What are the characteristics of traditional agroforestry systems in Timor Leste? 
-
-How much carbon do they store in both their biomass and in the soil
-
-Are there measurable differences between AFS?
-
-Hypotheses [VF]
-
-Proposition: lien entre typologie et stocks de carbone
+In this study, we aim to better understand traditional agroforestry systems in Timor-Leste, and in particular their carbon storage both in their biomass and in the soil. We hypothesize that different types of traditional agroforestry systems will exhibit measurable differences in aboveground carbon (AGC; H1a) and SOC (H1b) stocks. We also assume, following @Ma2020, that there is a positive relationship between AGC and SOC stocks in the topsoil layer (0-10 cm; H2a), but no relationship with SOC below 10 cm (H2b).
 
 # Materials and methods
 
@@ -65,6 +48,120 @@ dataverse_doi <- "10.18167/DVN1/QCXWIY"
 # for now : download manually from temporary link
 # utils::unzip("dataverse_files.zip")
 ``` 
+
+## Study area
+
+```{r get-site-info}
+## Load plot location data 
+data_coord <- read_xlsx("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = "GPS")
+setDT(data_coord)
+
+# get plot number
+data_coord[, N_PLOT := as.numeric(data.table::tstrsplit(N_Q_ID, "_")[[1]])]
+
+# get coordinates
+data_coord <- data_coord[, .(long = mean(as.numeric(LONG)), lat = mean(as.numeric(LAT))), .(N_PLOT)]
+
+## Load plot general information
+data_plot <- readxl::read_excel("data/DATA_BIOMASS_TL_SHORT.xlsx", "PLOT_GENERAL_INFO")
+
+# merge plot coordinates with general information (village, AFS)
+data_plot <- merge(data_coord, data_plot[, c("N_PLOT", "ID_VILLAGE", "ID_AF")])
+
+# simplify site names
+data_plot[, village := substr(ID_VILLAGE, 1, 1)]
+data_plot[village == "S", village := "Osso Luga"]
+data_plot[village == "G", village := "Gariuai"]
+
+## village location: create box around plots
+data_box = data_plot[, .(xc = mean(long), yc = mean(lat)), .(village)]
+data_box[village == "Gariuai", `:=`(w = 0.1, xc = xc + 0.001)]
+data_box[village == "Osso Luga", w := 0.05]
+data_box[, `:=`(x1 = xc - w/2, x2 = xc + w/2, y1 = yc - w/2, y2 = yc + w/2)]
+```
+
+
+```{r get-env-data}
+# extract elevation and rainfall for the 2 villages
+village_env = data_plot[, as.list(expand.grid(seq(min(long), max(long), 0.001), 
+                                           seq(min(lat), max(lat), 0.001))),
+                     .(village)]
+
+colnames(village_env) = c("village", "long", "lat")
+
+# TODO add code to download prec and elev
+village_env[, prec := terra::extract(
+  terra::rast("D:/maps/CHELSA/CHELSA_bio12_1981-2010_V.2.1.tif"), 
+  cbind(long, lat)
+)]
+
+village_env[, elev := terra::extract(
+  terra::rast("data/srtm_62_14.tif"), 
+  cbind(long, lat)
+)]
+
+village_summary = village_env[, .(
+  coord = paste(round(mean(long),2), round(mean(lat),2), sep = ", "), 
+  prec = round(mean(prec)), 
+  elev = paste(round(quantile(elev, c(0.025, 0.975))), collapse = " - ")),
+  .(village)]
+```
+
+The research was carried out in the center of the Baucau district, on the north-eastern coast of Timor-Leste. Two communities, or suco (group of villages), were selected to represent two contrasting topo-geographical, climatic and historical cases: (i) Gariuai suco (long-lat coordinates: `r village_summary[village=="Gariuai", coord]`) is located on a plateau of Baucau limestone, with an annual rainfall of `r village_summary[village=="Gariuai", prec]` mm and an altitude ranging 300-750 m; and (ii) the village of Osso Luga in Samalari suco (long-lat coordinates: `r village_summary[village=="Osso Luga", coord]`) is located on the Matebian foothill based on Bobonaro Scaly Clay, with an annual rainfall of `r village_summary[village=="Osso Luga", prec]` mm and an altitude ranging `r village_summary[village=="Osso Luga", elev]` m (Fig. \@ref(fig:map-sites)). The average soil properties differed between villages (Table \@ref(tab:stab-site-soil)), with Gariuai having Clay Loam soil texture compared to Osso Luga having clay soil texture. The two villages also have had different histories. Gariuai has been inhabited for at least 50 years, while Osso Luga was abandoned during the Indonesian occupation, and was only repopulated after 2000. During the period of abandonment, the various agroforestry systems in Osso Luga lay fallow.
+
+## Typology of agroforestry systems
+
+We used the typology described in @Cogne2024, developed in the same study area. This typology was based on the one proposed by @Nair1993;@Nair2022, and adapted to the local context with semi-structured interviews conducted in the same study area [@Cogne2024]. The five AFS identified were: crop system including a wooded fallow phase (CF), Sylvopastoral (SP), Young agroforest (YA), Home garden (HG) and Forest garden (FG). CF are plantations of a few non-perennial crops (such as maize, sweet potatoes, groundnuts and squash) which are left fallow after 1 to 3 years. SP land is a vast area (generally 200 to 500 ha) where cattle are grazed under a layer of trees. YA are agricultural plots where the farmer has been planting rows of trees, spaced at around 5x10m, for two to 10 years, usually with the help of projects. HG are plots of land close to houses, where crops and livestock (poultry, pigs, cattle, etc.) have been grown in the shade of numerous trees and palms for multiple uses (wood, fruit, fibre, etc.) for more than five years. FGs are generally former HGs (over 50 years old), which have been abandoned, for example as a result of the war, and are now used mainly for gathering with limited human influence.
+
+The AFS are presented in more detail in the supplemental information (Table \@ref(tab:afs-typology)) and in @Cogne2024. 
+
+## Field inventories
+
+We randomly selected 3 plots from each of the 5 traditional AFS identified in each of the two sites (30 plots in total; Fig. \@ref(fig:map-sites)). Sampling plots were defined as the entire agricultural plot (area between 0.06-1.25 ha) for all AFS except SP plots, which were generally much larger than 1 ha. In SP plots, a 1 ha sampling plot was delineated within the agricultural plot. Tree and soil measurements (described below) were carried out between June and August 2021. 
+
+### Tree measurements
+
+Within each sampling plot, all trees with a circumference at breast height (CBH) greater than or equal to 100 cm were identified taxonomically and their CBH and height were measured. Five subplots of 10x10 m (0.01 ha) were established at each corner and in the center of the sampling plot: within these subplots, all trees with a CBH between 30 and 100 cm were taxonomically identified and their CBH and height were measured. Height measurements were done with a dendrometer. 
+
+Taxonomic identification was carried out using tetum vernacular names, which were then linked to scientific names using inaturalist and Pl@ntnet application, Geoffrey Hull’s monograph (Hull, 2006), the data bases of “the useful tropical plants” (https://tropical.theferns.info/) as well as the native plants websites of the NT herbarium from the Australian government (https://nt.gov.au/environment/native-plants/native-plants-and-nt-herbarium). The correspondence between tetum names and scientific names is provided in the supplemental material (Table S2). 
+
+### Soil measurements
+
+In each of the 30 sampling plots, a composite of 3 samples were collected following a transect to cover the plot’s inner-variability (see figure S1). Soils were sampled with an auger at 0-10 cm and 20-30 cm. Soils samples were then air-dried and sieved at 2 mm. They were the subject of standard physical and chemical analyses at Cirad laboratories in Montpellier, France. Among these analyses, total organic carbon was determined by dry combustion and measured with a thermal conductive detector.
+
+In addition, at one location at the center of the plot, soils were sampled with a cylinder of 250 cm$^3$ at 2-7 cm, 12-17 cm and 22-27 cm. Each sample was dried at 105°C in a classic oven until reaching a stable dry mass, sieved to 2 mm, and then the fine fraction (< 2 mm) was weighted. 
+
+## Biomass estimation
+
+We estimated tree-level AGC stocks from the measured tree CBH and height using the pantropical allometric equation from @Chave2014 and the R package BIOMASS [@Rejou-Mechain2017]. Each tree was assigned a mean and standard deviation of wood density at the species or genus level when at least one value was available from the Global Wood Density Database [@Zanne2009]. Other taxa were assigned a plot-level average wood density. The biomass of the palms was estimated by multiplying their estimated volume by their estimated wood density, taken here as the average wood density in the plots (mean: xxx and standard deviation: xxx). The volume of the palm trunks was estimated as the volume of a cylinder, using the height and diameter measured in situ, with a volumetric shrinkage of 11% [@WD2023]. The height of the palms was measured above the leaves and was therefore multiplied by a conversion factor of 0.9 to obtain the trunk height.
+
+Tree-level belowground carbon (BGC) stocks were estimated using the root-to-shoot ratio equation from @Ledo2018, which is based on tree DBH and climatic water deficit from @Chave2014. This ratio was then multiplied by the estimated aboveground carbon stock to obtain tree-by-tree belowground carbon stock. 
+
+Plot-level AGC and BGC stocks were then obtained by summing tree-level stocks and dividing by the plot area.
+
+## Soil organic carbon estimation
+
+Soil organic carbon stocks (in Mg.ha-1) were then calculated using the method recommended by @Poeplau2017 (M4), which correctly takes into account the coarse fraction of the soil:
+
+$$SOC_i = \frac{\sum_i Corg_i \cdot (mfine_i \cdot 10-6) \cdot (Splot \cdot \Delta d)}{Vcyl}$$  
+
+Where $Corg_i$ is the organic carbon content at depth $i$ (either 0-10, 10-20 or 20-30 cm); $mfine_i$ is the mass of the fine fraction of the soil in the sampling cylinder at depth $i$ (in g), converted into Mg with a factor of 10$^{-6}$; Splot is the surface of a 1-ha plot (10$^8$ cm$^2$); $\Delta d$ is the difference in sample depths (= 10 cm) and $Vcyl$ is the volume of the sampling cylinder (250 cm$^3$). At depth $i$ = 10-20 cm, where the carbon content was not measured (see "Soil measurements" section), we used the average of the carbon content values at 0-10 and 20-30 cm.  
+
+## Statistical analysis
+
+### Statistical tests
+
+The estimated AGC and SOC stocks were log-transformed for all statistical tests, because we expect them to be log-normally distributed as they only take positive values. After testing for normality (Shapiro-Wilks test) and homoscedasticity (Levene’s test), we performed a two-way ANOVA on the log-transformed estimates of AGC and SOC stocks, grouped by AFS and site. To test the relationship between log-transformed SOC and AGC stocks, we fitted two linear mixed models. We predicted SOC stocks at two different depths (either 0-10 or 0-30 cm) as a function of AGC stocks (fixed effect) and site (Samalari or Osso-Luga; random effect).
+
+### Uncertainty propagation
+
+The uncertainty on plot-level AGC was calculated with the AGBmonteCarlo() function from the BIOMASS package, using a (rather conservative) coefficient of variation of 15% on height measurements (Hunter et al 2013); large and small errors on 5 and 95% of trees respectively (Chave et al 2004; Réjou-Méchain et al., 2017).
+To propagate uncertainty on SOC estimates, we used a coefficient of variation of 12% for organic carbon (Cirad laboratory in Montpellier, France), 10% for the mass of the fine fraction (Page-Dumroese et al. 1999). 
+
+We then propagated these uncertainties using a Monte Carlo method (1000 iterations). For single plot estimates of carbon stocks, medians and 95% confidence intervals were estimated as quantiles of the results of the 1000 iterations. For multiplot estimates of carbon stocks, values within each grouping factor were additionally bootstrapped before calculating quantiles (median and 95% confidence intervals). 
+
+
+
 
 ```{r agb-calculation}
 # get agb data
@@ -167,8 +264,8 @@ dataC$ID_AF <- factor(dataC$ID_AF, levels = c("CF", "SP", "YA", "HG", "FG"))
 
 #1. prepare data
 data_agc_boot = melt(data_agb_unc, 
-                       measure.vars = c("AGC", "BGC"), 
-                       id.vars = c("ID_VILLAGE", "N_PLOT", "ID_AF", "iter"))
+                     measure.vars = c("AGC", "BGC"), 
+                     id.vars = c("ID_VILLAGE", "N_PLOT", "ID_AF", "iter"))
 
 data_soil_boot = data_soil_unc[, c("N_PLOT", "iter", "Cstock")]
 colnames(data_soil_boot)[3] = "value"
@@ -176,7 +273,7 @@ data_soil_boot$variable = "SOC"
 data_soil_boot$iter = paste0("V", data_soil_boot$iter)
 
 data_soil_boot = merge(data_soil_boot, data_plot[, c("N_PLOT","ID_VILLAGE", "ID_AF")])
-    
+
 data_boot = rbind(data_agc_boot, data_soil_boot[, colnames(data_agc_boot), with = FALSE])  
 
 # 2. add total stocks
@@ -187,14 +284,14 @@ data_boot[, village := substr(ID_VILLAGE, 1, 1)]
 
 # 3. bootstrap
 data_boot_saf = data_boot[, .(value = mean(sample(value, length(value), replace = TRUE))),
-    .(ID_AF, variable, iter)]
+                          .(ID_AF, variable, iter)]
 
 # calculate median and 95% confidence interval at site level
 data_boot_saf  = data_boot_saf[, .(
   value = paste0(
-  signif(mean(value), 3), " (",
-  signif(quantile(value, 0.025), 3), "-", 
-  signif(quantile(value, 0.975), 3), ")"
+    signif(mean(value), 3), " (",
+    signif(quantile(value, 0.025), 3), "-", 
+    signif(quantile(value, 0.975), 3), ")"
   )), 
   .(ID_AF, variable)]
 
@@ -217,7 +314,7 @@ hist((dataC$meanSOC))
 dataC[, .(
   shap.A = shapiro.test(log(medAGC))$p.value, 
   shap.S = shapiro.test(log(medSOC))$p.value
-  ), .(ID_AF, ID_SUCO)]
+), .(ID_AF, ID_SUCO)]
 # levene test of homoscedasticity
 library(car)
 dataC[, leveneTest(log(medAGC) ~ ID_AF*ID_SUCO)]$`Pr(>F)`[1]
@@ -280,36 +377,9 @@ write.csv(tab_anov, file = "tables/anov.csv", row.names = FALSE)
 
 ```
 
-```{r fig-1-map, fig.height =6, fig.width = 7}
-## 2. Load data from excel file ####
-data_coord <- read_xlsx("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = "GPS")
-data.table::setDT(data_coord)
-
-data_coord[, N_PLOT := as.numeric(data.table::tstrsplit(N_Q_ID, "_")[[1]])]
-
-data_coord <- data_coord[, .(long = mean(as.numeric(LONG)), lat = mean(as.numeric(LAT))), .(N_PLOT)]
-
-data_plot <- readxl::read_excel("data/DATA_BIOMASS_TL_SHORT.xlsx", "PLOT_GENERAL_INFO")
-
-data_plot <- merge(data_coord, data_plot[, c("N_PLOT", "ID_VILLAGE", "ID_AF")])
-
-data_plot[, village := substr(ID_VILLAGE, 1, 1)]
-data_plot[village == "S", village := "Osso Luga"]
-data_plot[village == "G", village := "Gariuai"]
-
-data_box = data_plot[, .(xc = mean(long), yc = mean(lat)), .(village)]
-data_box[village == "Gariuai", `:=`(w = 0.1, xc = xc + 0.001)]
-data_box[village == "Osso Luga", w := 0.05]
-data_box[, `:=`(x1 = xc - w/2, x2 = xc + w/2, y1 = yc - w/2, y2 = yc + w/2)]
-
-## create Timor map ####
-
+```{r map-sites, fig.height = 6, fig.width = 7}
+## create Timor map
 bbox <- c(124.5, -9.2, 127.5,  -8.3)
-# basemap <- ggmap::get_stamenmap(bbox, maptype = "terrain", zoom = 10)
-
-# geodata::elevation_3s(lon= c(data_box[village == "Osso Luga"]$x1), 
-#                       lat= c(data_box[village == "Osso Luga"]$y1), 
-#                       path = "data")
 timor_map <- map_data("world", region = "Timor-Leste")
 
 g1 = ggplot(timor_map) + 
@@ -323,7 +393,6 @@ g1 = ggplot(timor_map) +
         axis.ticks = element_blank(), axis.text = element_blank(), 
         panel.background = element_blank())+
   coord_sf(crs = 'WGS84')
-
 
 # get elevation information
 elev = as.data.frame(terra::rast("data/srtm_62_14.tif"), xy = TRUE)
@@ -380,22 +449,7 @@ l1 = ggpubr::get_legend(g3)
 
 ggpubr::ggarrange(ggpubr::ggarrange(g1, l1), g2, ncol = 1, heights = c(1,2))
 
-
 ggsave("figures/mapPlotsSRTM.png", height =4.5, width = 6)
-
-
-# extract elevation and rainfall for the 2 villages
-data_plot$prec <- terra::extract(
-  terra::rast("D:/maps/CHELSA/CHELSA_bio12_1981-2010_V.2.1.tif"), 
-  cbind(data_plot$long, data_plot$lat)
-)
-data_plot$elev <- terra::extract(
-  terra::rast("data/srtm_62_14.tif"), 
-  cbind(data_plot$long, data_plot$lat)
-)
-data_plot[, ID_SUCO := substr(ID_VILLAGE, 1, 1)]
-data_plot[, .(prec = mean(prec), range_prec = paste(range(prec), collapse = " - ")), .(ID_SUCO)]
-data_plot[, .(elev = mean(elev), range_elev = paste(range(elev), collapse = " - ")), .(ID_SUCO)]
 ```
 
 ```{r fig-2-barplot, fig.height = 5, fig.width = 6}
@@ -516,6 +570,12 @@ The relationship between AGC and SOC was not significant (p-value = `r round(dfr
 
 # Supplementary material
 
+
+```{r afs-typology}
+typ = readxl::read_excel("tables/afs-typology.xlsx")
+kable(typ)
+```
+
 ```{r sfig-distr-sol, fig.height = 5, fig.width = 15}
 ## diagnostic données sol pour marguerite
 g1 <- ggplot(data_soil, aes(x = CF*100, col = SAMPLE_DEPTH)) +
@@ -570,9 +630,9 @@ ggsave("figures/fig-clay-corg.pdf", height = 4, width = 6)
 
 lmerTest::lmer(
   log(Corg) ~ log(as.numeric(CLAY) + as.numeric(`FINE SILT`)) + 
-     (1|village)+ 
-     (1|SAMPLE_DEPTH), 
-   data = data_soil[SAMPLE_DEPTH != "10-20"]) |> 
+    (1|village)+ 
+    (1|SAMPLE_DEPTH), 
+  data = data_soil[SAMPLE_DEPTH != "10-20"]) |> 
   summary()
 
 ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY) + as.numeric(`FINE SILT`), y = Corg, col = SAMPLE_DEPTH, shape = village)) +
@@ -632,10 +692,10 @@ mult_values <- which(sapply(strsplit(litval$value, ",|and"), length)>1)
 new_rows = lapply(mult_values, function(i){
   vals = as.numeric(strsplit(litval$value[i], ",|and")[[1]])
   vals = vals[!is.na(vals)]
-
+  
   x = matrix(litval[i,], ncol = ncol(litval), nrow = length(vals), byrow = TRUE)
   x[, colnames(litval) == "value"] = vals
-
+  
   x = as.data.frame(x)
   colnames(x) = colnames(litval)
   return(x)
@@ -661,7 +721,7 @@ litval = data.frame(system = unlist(litval2$system),
 
 ```{r sfig-altitude}
 dataCelev = merge(dataC[, c("N_PLOT", "meanSOC", "uprSOC", "lwrSOC")], 
-                 data_plot[, c("N_PLOT", "elev", "village")], by = "N_PLOT")
+                  data_plot[, c("N_PLOT", "elev", "village")], by = "N_PLOT")
 
 lmerTest::lmer(log(meanSOC) ~ log(elev) + (1|village), data = dataCelev) |> 
   summary()
@@ -672,6 +732,7 @@ ggplot(dataCelev, aes(x = elev, y = meanSOC, col = village)) +
   labs(x = "Elevation (m)", y = "SOC stocks (Mg C/ha)", col = "Site")
 ggsave("figures/soc-elev.png", height = 4, width = 6)
 ```
+
 
 ### Site soil characteristics
 
@@ -708,9 +769,9 @@ data_soil_site_simu =
 # calculate mean and 95% confidence interval at site level
 data_soil_site  = data_soil_site_simu[, .(
   value = paste0(
-  signif(mean(value), 3), " (",
-  signif(quantile(value, 0.025), 3), "-", 
-  signif(quantile(value, 0.975), 3), ")"
+    signif(mean(value), 3), " (",
+    signif(quantile(value, 0.025), 3), "-", 
+    signif(quantile(value, 0.975), 3), ")"
   )), 
   .(village, variable)]
 
@@ -734,7 +795,7 @@ vern1 <- lapply(sheets1, \(x){
     unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
 })
 vern2 <- lapply(sheets2, \(x){
-    df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x)
+  df = readxl::read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x)
   df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |>
     unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
 })

@@ -215,15 +215,17 @@ data_tot[, TYPE := ifelse(grepl("Q", data_tot$N_Q_ID), "QUADRAT", "TOTAL")]
 data_tot[TYPE == "QUADRAT", AREA := 0.05]
 
 # sum AGB of trees in each plot and quadrat, and standardize by area (to Mg/ha)
-data_agb <- data_tot[, .(AGC = sum(AGC/AREA), BGC = sum(BGC/AREA)), .(N_PLOT, ID_VILLAGE, ID_AF, iter)]
+data_agb_unc <- data_tot[, .(AGC = sum(AGC/AREA), BGC = sum(BGC/AREA)), .(N_PLOT, ID_VILLAGE, ID_AF, iter)]
 
-data_agb <- data_agb[, .(meanAGC = mean(AGC), 
-                         lwrAGC = quantile(AGC, 0.025), 
-                         uprAGC = quantile(AGC, 0.975), 
-                         meanBGC = mean(BGC), 
-                         lwrBGC = quantile(BGC, 0.025), 
-                         uprBGC = quantile(BGC, 0.975)), 
-                     .(N_PLOT, ID_VILLAGE, ID_AF)]
+data_agb <- data_agb_unc[, .(meanAGC = mean(AGC), 
+                             lwrAGC = quantile(AGC, 0.025), 
+                             medAGC = quantile(AGC, 0.5), 
+                             uprAGC = quantile(AGC, 0.975), 
+                             meanBGC = mean(BGC), 
+                             lwrBGC = quantile(BGC, 0.025), 
+                             medBGC = quantile(BGC, 0.5), 
+                             uprBGC = quantile(BGC, 0.975)), 
+                         .(N_PLOT, ID_VILLAGE, ID_AF)]
 
 
 ## optional: graphs ####
