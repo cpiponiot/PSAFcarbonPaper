@@ -872,6 +872,9 @@ data_soil_site_simu =
     value = mean(sample(value, length(value), replace = TRUE))),
     .(site, variable, n)]
 
+# convert sand, silt, clay and C content from % into g/kg
+data_soil_site_simu[ variable %in% c("Corg", "CLAY", "sand", "silt"), value := value*10]
+
 # calculate mean and 95% confidence interval at site level
 data_soil_site  = data_soil_site_simu[, .(
   value = paste0(
@@ -880,6 +883,7 @@ data_soil_site  = data_soil_site_simu[, .(
     signif(quantile(value, 0.975), 3), ")"
   )), 
   .(site, variable)]
+
 
 # change table shape to have one column per variable
 data_soil_site = dcast(data_soil_site, site ~ variable, value.var = "value")
@@ -890,11 +894,14 @@ flextable(
   data_soil_site,
   col_keys = c("site", "CLAY", "silt", "sand", "Corg",
                "N", "Corg_N", "pH", "CEC", "Ca", "K", "Mg", "Na"), 
-  cwidth = 0.5
-) |> set_header_labels(
-  values = c("Site", "Clay (%)", "Silt (%)", "Sand (%)", "SOC content (%)", 
-             "N", "C/N", "pH", "CEC", "Ca", "K", "Mg", "Na"))|> 
-  compose(i = 1, j = "N", part = "header", value = as_paragraph("N (%", as_sub("o"), ")")) |>
+  cwidth = c(0.5, rep(0.6, 5), rep(0.5, 2), rep(0.6, 5)) 
+) |> 
+  compose(i = 1, j = "CLAY", part = "header", value = as_paragraph("Clay\n(g kg", as_sup("-1"), ")")) |> 
+  compose(i = 1, j = "silt", part = "header", value = as_paragraph("Silt (g kg", as_sup("-1"), ")")) |> 
+  compose(i = 1, j = "sand", part = "header", value = as_paragraph("Sand (g kg", as_sup("-1"), ")")) |> 
+  compose(i = 1, j = "Corg", part = "header", value = as_paragraph("C content (g kg", as_sup("-1"), ")")) |> 
+  compose(i = 1, j = "N", part = "header", value = as_paragraph("N content (g kg", as_sup("-1"), ")")) |>
+  compose(i = 1, j = "Corg_N", part = "header", value = as_paragraph("C/N")) |> 
   compose(i = 1, j = "CEC", part = "header", value = as_paragraph( "CEC (cmolc kg", as_sup("-1"), ")")) |> 
   compose(i = 1, j = "Ca", part = "header", value = as_paragraph( "Ca (cmolc kg", as_sup("-1"), ")")) |> 
   compose(i = 1, j = "K", part = "header", value = as_paragraph( "K (cmolc kg", as_sup("-1"), ")")) |> 
