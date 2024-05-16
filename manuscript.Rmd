@@ -1,16 +1,42 @@
 ---
 title: "Traditional agroforestry systems in Timor-Leste can store large amounts of carbon in both soil and biomass"
-author: "Camille Piponiot^*^, Marguerite Cogné^*^, Vincent Freycon, Alexis Thoumazeau, Marçal Gusmão, Régis Peltier"
+author: "Camille Piponiot, Marguerite Cogné, Vincent Freycon, Alexis Thoumazeau, Marçal Gusmão, Régis Peltier"
+
+abstract: |
+  Agroforestry has the potential to make agriculture more resilient while improving carbon sequestration by incorporating trees and other woody perennials into agricultural land and diversifying landscapes. Traditional agricultural systems in tropical areas often include trees, but their carbon sequestration potential is not always well described, hindering their inclusion in climate change mitigation strategies. In this study, we quantified carbon storage in both vegetation biomass and soil in five traditional agroforestry systems (AFS) in Timor-Leste, namely cropping systems with fallow, silvopastures, young agroforests, home gardens, and forest gardens. Our results show that these traditional AFS can store large amounts of carbon, with the average being 156\ Mg\ C\ ha$^{-1}$. The AFS with the highest carbon stocks (forest gardens) stored an average of 210\ Mg\ C\ ha$^{-1}$, close to the values of old-growth tropical forests. Biomass carbon was strongly dependent on the type of AFS (which differed in tree cover), while soil carbon was less variable between AFS but more dependent on site. We found no relationship between the amount of carbon stored in biomass and soil. Our results highlight the high diversity of traditional AFS in Timor-Leste and their high carbon sequestration capacity. These results could provide an important baseline for the inclusion of AFS in Timor-Leste’s climate change mitigation strategy, and could serve as a reference for future AFS studies in different agro-climates of Timor-Leste.
+  
+journal: "Agroforestry systems"
 date: ""
-output: 
-  officedown::rdocx_document:
+
+output:
+  officedown::rdocx_document: 
     base_format: "bookdown::word_document2"
-    reference_docx: word-styles-ref-02.docx
-bibliography: references.bib
+    reference_docx: misc/word-styles-ref-02.docx
+bibliography: misc/references.bib
 nocite: |
-  @Orsini1976, @Nair1993, @Nair2021
+  @Nair1993, @Nair2021, @Orsini1976
 csl: misc/springer-basic-author-date.csl
+keywords: "Traditional agroforestry, carbon stocks, soil, biomass"
 ---
+
+Camille Piponiot(*) - Marguerite Cogné - Vincent Freycon - Régis Peltier
+
+UR Forests and Societies, CIRAD, Univ Montpellier, Montpellier, France
+
+(*) email: camille.piponiot-laroche@cirad.fr
+
+
+Alexis Thoumazeau
+
+UR ABSys, CIRAD, Univ Montpellier, CIHEAM-IAMM, INRAE, Institut Agro, Montpellier, France
+
+HRPP, Kasetsart University, Bangkok, Thailand
+
+
+Marçal Gusmão
+
+National University of Timor Lorosa'e, Dili, Timor-Leste
+
 
 ```{r setup, include=FALSE}
 # Run with R version 4.3.2
@@ -43,14 +69,6 @@ lapply(packages_needed, require, character.only = TRUE)
 
 opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "hide")
 ```
-
-**Journal**: Agroforestry Systems
-
-**Word count**: 8365; **Figure and table count**: 5 
-
-# Abstract
-
-Agroforestry has the potential to make agriculture more resilient while improving carbon sequestration by incorporating trees and other woody perennials into agricultural land and diversifying landscapes. Traditional agricultural systems in tropical areas often include trees, but their carbon sequestration potential is not always well described, hindering their inclusion in climate change mitigation strategies. In this study, we quantified carbon storage in both vegetation biomass and soil in five traditional agroforestry systems (AFS) in Timor-Leste, namely cropping systems with fallow, silvopastures, young agroforests, home gardens, and forest gardens. Our results show that these traditional AFS can store large amounts of carbon, with the average being 156\ Mg\ C\ ha$^{-1}$. The AFS with the highest carbon stocks (forest gardens) stored an average of 210\ Mg\ C\ ha$^{-1}$, close to the values of old-growth tropical forests. Biomass carbon was strongly dependent on the type of AFS (which differed in tree cover), while soil carbon was less variable between AFS but more dependent on site. We found no relationship between the amount of carbon stored in biomass and soil. Our results highlight the high diversity of traditional AFS in Timor-Leste and their high carbon sequestration capacity. These results could provide an important baseline for the inclusion of AFS in Timor-Leste’s climate change mitigation strategy, and could serve as a reference for future AFS studies in different agro-climates of Timor-Leste. 
 
 # Introduction
 
@@ -199,9 +217,9 @@ Taxonomic identification was carried out using Tetum  (a national official langu
 
 ### Soil measurements
 
-In each of the 30 sample plots, three composite samples were taken from three of the five 10 x 10 m subplots, following a transect covering the intra-plot variability and at a minimum distance of 1 m from any tree (Figure\ S\@ref(fig:design)). Soils were sampled with a 15 cm auger at 0-10 cm and 20-30 cm depth; due to the size of the auger we could not accurately sample the intermediate soil layer. Soils samples were then air-dried and sieved at 2 mm. They underwent standard physical and chemical analyses at Cirad laboratories in Montpellier, France (Table\ S\@ref(tab:site-soil)). Total organic carbon was determined by dry combustion and measured with a thermal conductive detector.
+In each of the 30 sample plots, a composite of three samples was taken from three of the five 10 x 10 m subplots, following a transect covering the intra-plot variability and at a minimum distance of 1 m from any tree (Figure\ S\@ref(fig:design)). Soils were sampled with a 15 cm auger at 0-10 cm and 20-30 cm depth; due to the size of the auger we could not accurately sample the intermediate soil layer. Soils samples were then air-dried and sieved at 2 mm. They underwent standard physical and chemical analyses at Cirad laboratories in Montpellier, France (Table\ S\@ref(tab:site-soil)). Total organic carbon was determined by dry combustion and measured with a thermal conductive detector.
 
-In addition, at one location at the center of the plot, soils were sampled with a cylinder of 250 cm3 at 2-7 cm, 12-17 cm and 22-27 cm. Each sample was dried at 105°C in a classic oven until a stable dry mass was reached and then sieved to 2 mm. The fine fraction (< 2 mm) was weighed to be used in the SOC stocks calculation (equation \@ref(eq:soc)). 
+In addition, at one location at the center of the plot, soils were sampled with a cylinder of 250 cm^3^ at depths of 2-7 cm, 12-17 cm and 22-27 cm. Each sample was dried at 105°C in a classic oven until a stable dry mass was reached and then sieved to 2 mm. The fine fraction (< 2 mm) was weighed to be used in the SOC stocks calculation (equation \@ref(eq:soc)). 
 
 ## Carbon stocks estimation
 
@@ -409,7 +427,7 @@ data_sim = rbind(data_sim[, colnames(data_sim_empty), with = FALSE], data_sim_em
 
 ### Soil organic carbon estimation
 
-Soil organic carbon stocks (in Mg\ C\ ha$^{-1}$) were then calculated as follows: 
+Soil organic carbon stocks (in Mg\ C\ ha$^{-1}$) were calculated as follows: 
 
 \begin{equation}
 SOC_i = \frac{\sum_i Corg_i \cdot (mfine_i \cdot 10^{-6}) \cdot (Splot \cdot \Delta d)}{Vcyl} (\#eq:soc)
@@ -498,6 +516,8 @@ dataC_plot = data_sim[, .(
   lwr = quantile(value, 0.025),
   upr= quantile(value, 0.975)
 ), .(plot = N_PLOT, site, afs = ID_AF, variable)]
+# save for supp info doc 
+write.csv(dataC_plot, "dataC_plot.csv", row.names = FALSE)
 
 # AFS level statistics (with bootstrapping)
 dataC_afs = data_sim[, .(
@@ -596,13 +616,13 @@ The relationship between AGC and SOC was not significant (p-value = `r round(dfr
 
 ## Traditional AFS in Timor-Leste can store large C stocks
 
-Compared to values reported in the literature for other AFS, the carbon stocks in this study were relatively high. Specifically, the average SOC stocks (`r dataC_plot[variable=="SOC", round(mean(mean))]`\ Mg\ C\ ha$^{-1}$) were higher than other reported values. In a meta-analysis by @Shi2018, it was estimated that AFS stored around 50\ Mg\ C\ ha$^{-1}$ at a 0-30 cm depth. Such large SOC stocks could be due to the high soil pH associated with high exchangeable Ca content at our sites (Table\ \@ref(tab:site-soil)), as Ca is frequently attributed to enhanced organic matter stabilization [@Wiesmeier2019]. In contrast, the average biomass stocks (`r dataC_plot[variable%in%c("AGC", "BGC"), sum(mean), .(plot)][, round(mean(V1))]`\ Mg\ C\ ha$^{-1}$) were similar to the average of 74\ Mg\ C\ ha$^{-1}$ estimated by @Ma2020, although some AFS had particularly high biomass values. The AFS with the highest carbon stocks, `r dataC_afs[variable=="TOT", afs[which.max(mean)]]`, had total carbon stocks (`r dataC_afs[variable=="TOT", round(max(mean))]`\ Mg\ C\ ha$^{-1}$) close to those of old-growth tropical forests [270\ Mg\ C\ ha$^{-1}$, @Lal2005]. The high carbon stocks in FG can be attributed to the length of time they had been established, which was generally longer than 50 years, with little human intervention (Table\ S\@ref(tab:afs-typology)). In terms of structure and carbon stocks, FG should therefore resemble old secondary forests, which have been shown to recover more than 60% of the AGC stocks and almost all the SOC stocks of an old forest [@Poorter2021]. In addition, FG contain a large number of trees of the same age that were planted when the AFS was established and can survive to reach significant sizes, similar to forest plantations that can grow to old-growth-forest levels of AGC stocks after only a few decades [@Brown2020;@Njoukam1996].
+Compared to values reported in the literature for other AFS, the carbon stocks in this study were relatively high. Specifically, the average SOC stocks (`r dataC_plot[variable=="SOC", round(mean(mean))]`\ Mg\ C\ ha$^{-1}$) were higher than other reported values. In a meta-analysis by @Shi2018, it was estimated that AFS stored around 50\ Mg\ C\ ha$^{-1}$ at a 0-30 cm depth. Such large SOC stocks could be due to the high exchangeable Ca^2+^ content at the sites included in this study (Table\ \@ref(tab:site-soil)), as Ca^2+^ is frequently attributed to enhanced organic matter stabilization [@Wiesmeier2019]. In contrast, the average biomass stocks (`r dataC_plot[variable%in%c("AGC", "BGC"), sum(mean), .(plot)][, round(mean(V1))]`\ Mg\ C\ ha$^{-1}$) were similar to the average of 74\ Mg\ C\ ha$^{-1}$ estimated by @Ma2020, although some AFS had particularly high biomass values. The AFS with the highest carbon stocks, `r dataC_afs[variable=="TOT", afs[which.max(mean)]]`, had total carbon stocks (`r dataC_afs[variable=="TOT", round(max(mean))]`\ Mg\ C\ ha$^{-1}$) close to those of old-growth tropical forests [270\ Mg\ C\ ha$^{-1}$, @Lal2005]. The high carbon stocks in FG can be attributed to the length of time they had been established, which was generally longer than 50 years, with little human intervention (Table\ S\@ref(tab:afs-typology)). In terms of structure and carbon stocks, FG should therefore resemble old secondary forests, which have been shown to recover more than 60% of the AGC stocks and almost all the SOC stocks of an old forest [@Poorter2021]. In addition, FG contain a large number of trees of the same age that were planted when the AFS was established and can survive to reach significant sizes, similar to forest plantations that can grow to old-growth-forest levels of AGC stocks after only a few decades [@Brown2020;@Njoukam1996].
 
 Although agroforestry has been identified as one of the possible levers to increase carbon storage in the Timorese agricultural landscape [@UNFCCC2020;@Paudel2022], to our knowledge no study has quantified carbon stocks in these systems. Our study could therefore help to better quantify the national contribution of agroforestry to Timor-Leste's climate change mitigation commitments [@UNFCCC2020] and the potential carbon gains from a wider adoption of these techniques. Further studies should help to increase the representativeness of the AFS sampled by including a greater diversity of AFS and environmental conditions. Another critical aspect is the quantification of temporal changes in carbon stocks, which could be assessed in future studies either by monitoring chronosequences of plots where the time since installation is known, or by remeasuring plots over time. 
 
 ## AFS differ in C stored in their biomass 
 
-The AFS studied were found to differ significantly in terms of AGC stocks, in agreement with our hypothesis H1a. This result reflects the density and size of trees in the plot, which in turn depend on the importance of trees in the production system. In some systems, such as CF and SP, trees do not contribute directly to food production but have other functions, such as restoring soil fertility (e.g., during the fallow period) or providing shade for livestock. This more limited role for trees may explain why their total biomass is lower in these systems. In CF systems, the plot is periodically cleared and the remaining trees are pruned to allow the planted annual crops to receive full sun, while in SP systems, the growth of grazing grasses is favored by reducing the number of trees.
+The AFS studied were found to differ significantly in terms of AGC stocks, in agreement with our hypothesis H1a. This result reflects the density and size of trees in the plot, which in turn depend on the importance of trees in the production system. In some systems, such as CF and SP, trees do not contribute directly to food production but have other functions, such as restoring soil fertility (e.g., during the fallow period) or providing shade for livestock. This more limited role for trees may explain why their total biomass is lower in these systems. Indeed, in CF systems, the plot is periodically cleared and the remaining trees are pruned to allow the planted annual crops to receive full sun, while in SP systems, the growth of grazing grasses is favored by reducing the number of trees.
 
 It is also interesting to note that, in line with previous results, the age of the trees in the AFS largely explains the carbon stored in their biomass [@Ma2020]. The AFS described in this study reflect different stages of transition in land use, which follow the growth of their trees (Figure\ S\@ref(fig:seq-diagram)). For example, a farmer might plant trees in a CF field, which will then become a YA that can still produce annual crops for the first 2 to 4 years, before the shade from the trees becomes too great. The trees are then used as property markers and, as they mature, produce wood and fruits; the YA then becomes an HG or FG. Similarly, our results show that AGC stocks increase from CF to YA, HG and FG (Table\ \@ref(tab:summary)).
 
@@ -616,7 +636,7 @@ We found a significant difference in SOC between the two sites, with higher SOC 
 
 ## SOC stocks are not explained by variation in AGC stocks
 
-We found no significant relationship between AGC and SOC stocks in either the topsoil layer 0-10 cm depth (H2a refuted) or at 0-30 cm depth (H2b confirmed). Overall, AGC stocks were a poor predictor of SOC stocks. These results may relate to previous findings that SOC stocks saturate much faster than AGC stocks in tropical AFS. For example, in a global meta-analysis, @Ma2020 estimated that it took only five years for SOC stocks in tropical AFS to reach an equilibrium value, but more than three decades for AGC stocks. This desynchronization of SOC and AGC stocks recovery has also been observed in naturally regenerating tropical forests. In a systematic review, @Martin2013 found that SOC in tropical secondary forests changed little with time after disturbance, while AGC increased. @Ojoatre2024 found similar results in a secondary tropical mountain forest. These results suggest that there is little correlation between AGC and SOC stocks once AFS are more than five years old, which is the case in our study for FG, HG (> 5 years old) and partially for YA (2 to 10 years; Table\ S\@ref(tab:afs-typology)). This saturation of SOC stocks even with increasing AGC stocks is counterintuitive, as it might be expected that higher AGC stocks would lead to more litter production and decomposition, some of which would increase SOC stocks. However, @Sayer2019, found that SOC stocks did not increase in a lowland tropical forest in Panama after 15 years of an experimentally doubled aboveground litter input. Two processes could explain these findings. On the one hand, the addition of easily decomposable litter could stimulate microbial decomposition and turnover of old stored SOC [i.e., priming effect; @Sayer2019]. On the other hand, the capacity of the soil to store SOC through organo-mineral associations would be limited by its fine element content (clay + fine silt) (i.e., saturation concept).
+We found no significant relationship between AGC and SOC stocks in either the topsoil layer 0-10 cm depth (H2a refuted) or at 0-30 cm depth (H2b confirmed). Overall, AGC stocks were a poor predictor of SOC stocks. These results may relate to previous findings that SOC stocks saturate much faster than AGC stocks in tropical AFS. For example, in their global meta-analysis, @Ma2020 estimated that it took only five years for SOC stocks in tropical AFS to reach an equilibrium value, but more than three decades for AGC stocks. This desynchronization of SOC and AGC stocks recovery has also been observed in naturally regenerating tropical forests. In a systematic review, @Martin2013 found that SOC in tropical secondary forests changed little with time after disturbance, while AGC increased. @Ojoatre2024 found similar results in a secondary tropical mountain forest. These results suggest that there is little correlation between AGC and SOC stocks once AFS are more than five years old, which is the case in our study for FG, HG (> 5 years old) and partially for YA (2 to 10 years; Table\ S\@ref(tab:afs-typology)). This saturation of SOC stocks even with increasing AGC stocks is counterintuitive, as it might be expected that higher AGC stocks would lead to more litter production and decomposition, some of which would increase SOC stocks. However, @Sayer2019, found that SOC stocks did not increase in a lowland tropical forest in Panama after 15 years of an experimentally doubled aboveground litter input. Two processes could explain these findings. On the one hand, the addition of easily decomposable litter could stimulate microbial decomposition and turnover of old stored SOC [i.e., priming effect; @Sayer2019]. On the other hand, the capacity of the soil to store SOC through organo-mineral associations would be limited by its fine element content (clay + fine silt) (i.e., saturation concept).
 
 In addition to biomass stocks, other vegetation characteristics may account for variations in soil carbon stocks between AFS. For instance, previous studies have shown that tree diversity can enhance SOC sequestration in natural ecosystems [@Spohn2023;@Chen2018] and in AFS [@Manaye2021;@Islam2015]. Moreover, total SOC may be less sensitive to management practices (such as biomass inputs) than specific fractions of SOC [@Haynes2005]. Therefore, it would be interesting to continue with further studies that focus not only on the quantity but also the quality of soil organic matter and its relationship with biodiversity (flora and fauna) in traditional Timorese AFS.
 
@@ -655,14 +675,14 @@ The R codes used to analyze the data and produce the manuscript (including figur
 ```{r tab.id = "summary", results = "show", tab.cap = "Mean and associated 95% confidence intervals (in parentheses) of total, aboveground carbon (AGC), belowground carbon (BGC), and soil organic carbon (SOC) stocks in each agroforestry system."}
 # calculate median and 95% confidence interval at site level
 dataC_afs[, value := paste0(
-  signif(mean, 3), " (",
-  signif(lwr_mean, 3), "-", 
-  signif(upr_mean, 3), ")")] |> 
+  round(mean), " (",
+  round(lwr_mean), "-", 
+  round(upr_mean), ")")] |> 
   subset(variable != "SOC10") |> 
   dcast(afs ~ variable, value.var = "value") |> 
   flextable(col_keys = c("afs", "TOT", "AGC", "BGC", "SOC"), 
             cwidth = c(0.9, 1.2, 1.3, 1.3, 1.2)) |> 
-  compose(i = 1, j = "afs", part = "header", value = as_paragraph("Agroforestry system")) |>
+  compose(i = 1, j = "afs", part = "header", value = as_paragraph("Agroforestry\nsystem")) |>
   compose(i = 1, j = "TOT", part = "header", value = as_paragraph( "Total C stocks\n(Mg C ha", as_sup("-1"), ")"))|> 
   compose(i = 1, j = "AGC", part = "header", value = as_paragraph( "AGC stocks\n(Mg C ha", as_sup("-1"), ")"))|> 
   compose(i = 1, j = "BGC", part = "header", value = as_paragraph( "BGC stocks\n(Mg C ha", as_sup("-1"), ")"))|> 
@@ -760,6 +780,7 @@ g3 = ggplot(data_plot) +
 l1 = get_legend(g3)
 
 ggarrange(ggarrange(g1, l1), g2, ncol = 1, heights = c(1,2))
+ggsave("fig1.pdf")
 ```
 
 </br>
@@ -777,6 +798,7 @@ ggplot(dataC_afs_site[variable %in% c("AGC", "BGC", "SOC")],
   theme(strip.placement = "outside") +
   labs(x = "", y = expression("Carbon stocks (Mg C"*" "*ha^{-1}*")"), fill = "Carbon\npool") +
   scale_y_continuous(expand = c(0, 0))
+ggsave("fig2.pdf")
 ```
 
 </br>
@@ -824,6 +846,7 @@ ggplot(dataC_fig, aes(color = afs)) +
   scale_y_log10() +
   facet_wrap(~depth) +
   theme_classic()
+ggsave("fig3.pdf")
 ```
 
 
@@ -831,13 +854,18 @@ ggplot(dataC_fig, aes(color = afs)) +
 
 <div id="refs"></div>
 
-\newpage
 
 # Supplementary information
 
 ## Tables 
 
 ```{r site-soil-char}
+data_soil[, Corg := `Corg\n`]
+data_soil[, muCorg := mean(Corg, na.rm = TRUE), .(N_PLOT)]
+data_soil[is.na(Corg), Corg := muCorg]
+
+data_soil[, c("h0", "h1") := lapply(tstrsplit(SAMPLE_DEPTH, "-"), as.numeric)]
+
 data_soil$silt <- as.numeric(data_soil$`FINE SILT`) + as.numeric(data_soil$`COARSE SILT`)
 data_soil$sand <- as.numeric(data_soil$`FINE SAND`) + as.numeric(data_soil$`COARSE SAND`)
 
@@ -878,36 +906,24 @@ data_soil_site_simu[ variable %in% c("Corg", "CLAY", "sand", "silt"), value := v
 
 # calculate mean and 95% confidence interval at site level
 data_soil_site  = data_soil_site_simu[, .(
-  value = paste0(
-    signif(mean(value), 3), " (",
-    signif(quantile(value, 0.025), 3), "-", 
-    signif(quantile(value, 0.975), 3), ")"
-  )), 
+  mean = signif(mean(value), 3), 
+  lwr = signif(quantile(value, 0.025), 3),
+  upr = signif(quantile(value, 0.975), 3)
+  ), 
   .(site, variable)]
-
+data_soil_site[, value := paste0(round(mean, 1), " (", round(lwr, 1), "-", round(upr, 1), ")")]
+data_soil_site[variable %in% c("K", "Mg", "Na"), value := paste0(round(mean, 2), " (", round(lwr, 2), "-", round(upr, 2), ")")]
 
 # change table shape to have one column per variable
 data_soil_site = dcast(data_soil_site, site ~ variable, value.var = "value")
+
+## add unit row
+data_soil_site = data_soil_site[, c("site", "CLAY", "silt", "sand", "Corg", "N", "Corg_N", "pH", "CEC", "Ca", "K", "Mg", "Na")]
+colnames(data_soil_site) = c(" ", "Clay", "Silt", "Sand", "C content", "N content", "C:N", "pH", "CEC", "Ca", "K", "Mg", "Na")
 ```
 
-```{r tab.id = "site-soil", tab.lp="supp-tab", results = "show", tab.cap.pre="Table S", tab.cap = "Soil characteristics of the sites (average over 0-30 cm), presented as mean values with 95% confidence intervals (in parentheses). The confidence intervals were calculated by propagating a 12% error on the lab-provided values and obtaining site-level estimates through bootstrapping plot values (1000 simulations). Total organic carbon content (dry combustion method) ; total nitrogen content (dry combustion method) ; pH in water (soil:deionized water ratio of 1:2.5) ; CEC - cation exchangeable capacity - and exchangeable cations (Ca, K, Mg and Na) at soil pH [Cobaltihexamine method; Orsini and Remy, 1976]."}
-flextable(
-  data_soil_site,
-  col_keys = c("site", "CLAY", "silt", "sand", "Corg",
-               "N", "Corg_N", "pH", "CEC", "Ca", "K", "Mg", "Na"), 
-  cwidth = c(0.5, rep(0.6, 5), rep(0.5, 2), rep(0.6, 5)) 
-) |> 
-  compose(i = 1, j = "CLAY", part = "header", value = as_paragraph("Clay\n(g kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "silt", part = "header", value = as_paragraph("Silt (g kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "sand", part = "header", value = as_paragraph("Sand (g kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "Corg", part = "header", value = as_paragraph("C content (g kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "N", part = "header", value = as_paragraph("N content (g kg", as_sup("-1"), ")")) |>
-  compose(i = 1, j = "Corg_N", part = "header", value = as_paragraph("C/N")) |> 
-  compose(i = 1, j = "CEC", part = "header", value = as_paragraph( "CEC (cmolc kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "Ca", part = "header", value = as_paragraph( "Ca (cmolc kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "K", part = "header", value = as_paragraph( "K (cmolc kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "Mg", part = "header", value = as_paragraph( "Mg (cmolc kg", as_sup("-1"), ")")) |> 
-  compose(i = 1, j = "Na", part = "header", value = as_paragraph( "Na (cmolc kg", as_sup("-1"), ")"))
+```{r tab.id = "site-soil", tab.lp="supp-tab", results = "show", tab.cap.pre="Table S", tab.cap = "Soil characteristics of the sites (average over 0-30 cm), presented as mean values with 95% confidence intervals (in parentheses). Units are: in g/kg for clay, silt, sand, C and N contents; in cmolc/kg for CEC, Ca, K, Mg and Na; and no units for C:N and pH. The confidence intervals were calculated by propagating a 12% error on the lab-provided values and obtaining site-level estimates through bootstrapping plot values (1000 simulations). Total organic carbon content (dry combustion method) ; total nitrogen content (dry combustion method) ; pH in water (soil:deionized water ratio of 1:2.5) ; CEC - cation exchangeable capacity - and exchangeable cations (Ca, K, Mg and Na) at soil pH [Cobaltihexamine method; Orsini and Remy, 1976]."}
+flextable(data_soil_site, cwidth = 0.5)
 ```
 
 </br>
@@ -945,9 +961,6 @@ vern <- subset(vern, !is.na(TETUM_NAME) & !is.na(SCIENTIFIC_NAME))
 
 ## correct typos in vernacular names
 vern[, TETUM_NAME := tolower(gsub(" oan| kain| restu| hun restu", "", TETUM_NAME))]
-
-vern[,grep("tali", TETUM_NAME, value=T)]
-
 vern[grep("kami", TETUM_NAME), TETUM_NAME := "ai-kamii"]
 vern[, TETUM_NAME := gsub("ai-haek", "ai-hanek", TETUM_NAME)]
 vern[, TETUM_NAME := gsub("ai-bobur", "ai-bubur", TETUM_NAME)]
@@ -983,7 +996,8 @@ vern = vern[, .(tetum = paste(tetum, collapse = ", ")), .(latin)]
 ```{r tab.id = "tetum-names", tab.lp="supp-tab", results = "show", tab.cap.pre="Table S", tab.cap = "Correspondence between Tetum names and scientific names used in this study."}
 flextable(vern) |> 
   set_header_labels(values =  c("Scientific name", "Tetum name")) |> 
-  autofit()
+  autofit() |> 
+  italic(j=1)
 ```
 
 ## Figures 
@@ -994,7 +1008,7 @@ include_graphics("figures/plot-design.jpg")
 
 </br>
 
-```{r fig.id="seq-diagram", fig.cap = "Typical sequence of AFS in the sites included in this study. Transitions between two systems are represented by arrows: dashed arrows represent transitions that usually include tree removal, whereas solid arrows represent transitions where trees are planted and/or the AFS is left to regenerate naturally. These transitions may vary according to the farmer's strategy and available resources (Cogné and Lescuyer, 2024).", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 8, fig.height = 2.2}
+```{r fig.id="seq-diagram", fig.cap = "Typical sequence of AFS in the sites included in this study. Transitions between two systems are represented by arrows: dashed arrows represent transitions that usually include tree removal, whereas solid arrows represent transitions where trees are planted and/or the AFS is left to regenerate naturally. These transitions may vary according to the farmer's strategy and available resources (Cogné and Lescuyer, 2024).", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 8, fig.height = 2.2, out.width="50%"}
 # save_png <- function(plot, path){
 #   DiagrammeRsvg::export_svg(plot) %>%
 #     charToRaw() %>%
@@ -1035,7 +1049,8 @@ include_graphics("figures/seq_diagram.png")
 </br>
 
 ```{r fig.id="altitude-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap = "Effect of plot elevation (x-axis; in m) on SOC stocks (y-axis; in\ Mg\ C\ ha^-1^). Points are colored by site; the point corresponds to the mean prediction at that site, while the error bars correspond to the 95% confidence interval. We performed a linear mixed effects regression with log-transformed SOC stocks as the dependent variable, log-transformed elevation as the independent variable, and site as random effect. Results are presented as regression lines and the p-value of the relationship between SOC stocks and elevation.", fig.cap.pre="Figure S"}
-dataCelev = merge(dataC_plot[variable=="SOC", c("plot", "site", "mean", "upr", "lwr")], 
+dataC_plot <- read.csv("dataC_plot.csv") |> setDT()
+dataCelev <- merge(dataC_plot[variable=="SOC", c("plot", "site", "mean", "upr", "lwr")], 
                   data_plot[, c("N_PLOT", "long", "lat")], by.x = "plot", by.y = "N_PLOT")
 
 # extract elevation
@@ -1070,7 +1085,6 @@ ggplot(dataCelev, aes(x = elev, y = mean, col = site)) +
 </br>
 
 ```{r fig.id = "clay-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap="Distribution of SOC content (y-axis; in %) values as a function of fine silt and clay content (x-axis; in %), soil depth (point color; in cm), and site (point shape). We performed a linear mixed effects regression with log-transformed SOC content as the dependent variable, log-transformed fine soil texture as the independent variable, and soil depth and site as random effects. Results are presented as regression lines and the p-value of the relationship between SOC content and fine soil texture.", fig.cap.pre="Figure S"}
-
 data_soil[, site := substr(ID_VILLAGE, 1, 1)]
 data_soil[site == "S", site := "Osso-Luga"]
 data_soil[site == "G", site := "Gariuai"]
@@ -1104,4 +1118,3 @@ ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY) + as.numeric
   annotate(geom = "text", label = paste("p-value =", pvalueT), x = 45, y = 1) +
   theme_classic()
 ```
-
