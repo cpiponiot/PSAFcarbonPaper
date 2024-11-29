@@ -3,9 +3,9 @@ title: "Traditional agroforestry systems in Timor-Leste can store large amounts 
 author: "Camille Piponiot, Marguerite Cogné, Vincent Freycon, Alexis Thoumazeau, Marçal Gusmão, Régis Peltier"
 
 abstract: |
-  Agroforestry has the potential to make agriculture more resilient while improving carbon sequestration by incorporating trees and other woody perennials into agricultural land and diversifying landscapes. Traditional agricultural systems in tropical areas often include trees, but their carbon sequestration potential is not always well described, hindering their inclusion in climate change mitigation strategies. In this study, we quantified carbon storage in both vegetation biomass and soil in five traditional agroforestry systems (AFS) in Timor-Leste, namely cropping systems with fallow, silvopastures, young agroforests, home gardens, and forest gardens. Our results show that these traditional AFS can store large amounts of carbon, with the average being 156\ Mg\ C\ ha$^{-1}$. The AFS with the highest carbon stocks (forest gardens) stored an average of 210\ Mg\ C\ ha$^{-1}$, close to the values of old-growth tropical forests. Biomass carbon was strongly dependent on the type of AFS (which differed in tree cover), while soil carbon was less variable between AFS but more dependent on site. We found no relationship between the amount of carbon stored in biomass and soil. Our results highlight the high diversity of traditional AFS in Timor-Leste and their high carbon sequestration capacity. These results could provide an important baseline for the inclusion of AFS in Timor-Leste’s climate change mitigation strategy, and could serve as a reference for future AFS studies in different agro-climates of Timor-Leste.
+Agroforestry has the potential to make agriculture more resilient while improving carbon sequestration by incorporating trees and other woody perennials into agricultural land and diversifying landscapes. Traditional agricultural systems in tropical areas often include trees, but their carbon sequestration potential is not always well described, hindering their inclusion in climate change mitigation strategies. In this study, we quantified carbon storage in both vegetation biomass and soil in five traditional agroforestry systems (AFS) in Timor-Leste, namely cropping systems with fallow, silvopastures, young agroforests, home gardens, and forest gardens. Our results show that these traditional AFS can store large amounts of carbon, with the average being 156\ Mg\ C\ ha$^{-1}$. The AFS with the highest carbon stocks (forest gardens) stored an average of 210\ Mg\ C\ ha$^{-1}$, close to the values of old-growth tropical forests. Biomass carbon was strongly dependent on the type of AFS (which differed in tree cover), while soil carbon was less variable between AFS but more dependent on site. We found no relationship between the amount of carbon stored in biomass and soil. Our results highlight the high diversity of traditional AFS in Timor-Leste and their high carbon sequestration capacity. These results could provide an important baseline for the inclusion of AFS in Timor-Leste’s climate change mitigation strategy, and could serve as a reference for future AFS studies in different agro-climates of Timor-Leste.
   
-journal: "Agroforestry systems"
+  journal: "Agroforestry systems"
 date: ""
 
 output:
@@ -14,7 +14,7 @@ output:
     reference_docx: misc/word-styles-ref-02.docx
 bibliography: misc/references.bib
 nocite: |
-  @Nair1993, @Nair2021, @Orsini1976
+@Nair1993, @Nair2021, @Orsini1976
 csl: misc/springer-basic-author-date.csl
 keywords: "Traditional agroforestry, carbon stocks, soil, biomass"
 ---
@@ -47,6 +47,7 @@ packages_needed = c(
   "ggspatial",    # version 1.1.9
   "maps",         # version 3.4.2
   "ggpubr",       # version 0.6.0
+  "rdryad",       # version 1.0.0
   "readxl",       # version 1.4.3
   "data.table",   # version 1.14.8
   "knitr",        # version 1.45
@@ -280,13 +281,23 @@ data_tree <- subset(data_tree, DIAM_130_CM > 0)
 # get wood density
 data_wd <- getWoodDensity(genus = data_tree$GENUS, species = data_tree$SPECIES) 
 
-# estimate mean AGC
-data_tree$mean <- computeAGB(
-  D = data_tree$DIAM_130_CM, 
-  WD = data_wd$meanWD, 
-  H = data_tree$HEIGHT
-) * 0.4713 # conversion factor from biomass to carbon 
+# get carbon content 
+GLOWCAD_files = dryad_download("10.5061/dryad.18931zcxk")
+GLOWCAD = read.csv(GLOWCAD_files[[1]][3]) |> 
+  subset(grepl("tree", growth.form)) |> 
+  subset(tissue %in% c("stem", "root", "coarseroot")) |> 
+  subset(biome == "tropical") 
+data_ccontent <-  
+  
+  
+  # estimate mean AGC
+  data_tree$mean <- computeAGB(
+    D = data_tree$DIAM_130_CM, 
+    WD = data_wd$meanWD, 
+    H = data_tree$HEIGHT
+  ) * 0.4713 # conversion factor from biomass to carbon 
 
+# carbon content
 
 ### estimate AGC with uncertainty propagation
 
@@ -427,14 +438,21 @@ data_sim = rbind(data_sim[, colnames(data_sim_empty), with = FALSE], data_sim_em
 
 ### Soil organic carbon estimation
 
-Soil organic carbon stocks (in Mg\ C\ ha$^{-1}$) were calculated as follows: 
+SOC stocks (in Mg\ C\ ha$^{-1}$) in plot $p$ were calculated as follows: 
 
 \begin{equation}
-SOC_i = \frac{\sum_i Corg_i \cdot (mfine_i \cdot 10^{-6}) \cdot (Splot \cdot \Delta d)}{Vcyl} (\#eq:soc)
+SOC_p = \frac{\sum_i Corg_i \cdot (mfine_i \cdot 10^{-6}) \cdot (Splot \cdot \Delta d)}{Vcyl} (\#eq:soc)
 \end{equation}
 
+$$SOC_p = \frac{\sum_i Corg_i \cdot (mfine_i \cdot 10^{-6}) \cdot (Splot \cdot \Delta d)}{Vcyl}$$ 
 
-Where $Corg_i$ is the organic carbon content at depth $i$ (either 0-10, 10-20 or 20-30 cm); $mfine_i$ is the mass of the fine fraction of the soil in the sampling cylinder at depth $i$ (in g), converted into Mg with a factor of 10$^{-6}$; $Splot$ is the surface of a 1-ha plot (10$^8$ cm$^2$); $\Delta d$ is the difference in sample depths (= 10 cm) and $Vcyl$ is the volume of the sampling cylinder (250 cm$^3$). This calculation corresponds to the method recommended by @Poeplau2017 (M4), which correctly takes into account the coarse fraction of the soil. At depth $i$ = 10-20 cm, where the carbon content was not measured (see "Soil measurements" section), we used the average of the carbon content values at 0-10 and 20-30 cm.  
+Where $Corg_i$ is the SOC content at depth $i$ (either 0-10, 10-20 or 20-30 cm); $mfine_i$ is the mass of the fine fraction of the soil in the sampling cylinder at depth $i$ (in g), converted into Mg with a factor of 10$^{-6}$; $Splot$ is the surface of a 1-ha plot (10$^8$ cm$^2$); $\Delta d$ is the difference in sample depths (= 10 cm) and $Vcyl$ is the volume of the sampling cylinder (250 cm$^3$). This calculation corresponds to the method recommended by @Poeplau2017 (M4), which correctly takes into account the coarse fraction of the soil. At depth $i$ = 10-20 cm, where SOC content was not measured (see "Soil measurements" section), we estimated SOC content as a function of SOC content at 0-10 cm and 20-30 cm, assuming a negative exponential model of SOC content decrease with soil depth [@Mishra2009;@Murphy2019]: 
+
+\begin{equation}
+Corg_{10,20} = Corg_{0,10} \cdot \sqrt{\frac{Corg_{20,30}}{Corg_{0,10}}} (\#eq:intersoc)
+\end{equation}
+
+where $Corg_{a,b}$ is the average SOC content between depths a and b (see rationale for equation \@ref(eq:intersoc) in Supplementary Information xx).
 
 ```{r open-soil-data}
 # open soil lab data
@@ -452,10 +470,17 @@ setDT(data_soil)
 ```
 
 ```{r add-missing-values}
-## add intermediate soil carbon in 10-20 cm depth
 data_soil[, Corg := `Corg\n`]
-data_soil[, muCorg := mean(Corg, na.rm = TRUE), .(N_PLOT)]
-data_soil[is.na(Corg), Corg := muCorg]
+## add intermediate soil carbon in 10-20 cm depth under the assumption of an
+# organic carbon content that decreases as a negative exponential of depth, we can deduce the carbon content at 10-20 cm with the following function: SOC[10-20] = SOC[0-10]*sqrt(SOC[20-30]/SOC[0-10])
+data_soil = merge(
+  data_soil, 
+  data_soil[, .(
+    Corg1020 = Corg[SAMPLE_DEPTH=="0-10"]*
+      sqrt(Corg[SAMPLE_DEPTH=="20-30"]/Corg[SAMPLE_DEPTH=="0-10"])), 
+    .(N_PLOT)])
+
+data_soil[SAMPLE_DEPTH=="10-20", Corg := Corg1020]
 ```
 
 ```{r soc-error-propagation}
@@ -494,6 +519,20 @@ data_sim = rbind(data_sim[, colnames(data_sim_soil), with = FALSE], data_sim_soi
 data_sim = rbind(data_sim, data_sim[, .(value = sum(value[variable != "SOC10"]), variable = "TOT"), .(N_PLOT, site, ID_AF, iter)])
 ```
 
+```{r add-other-soil-properties}
+data_soil_summ <- data_soil |> 
+  subset(!is.na(TC)) |> 
+  melt(id.vars = c("N_PLOT", "SAMPLE_DEPTH"), 
+       measure.vars= c("CLAY", "FINE SILT", "pH\n", "Ca", "CEC\n"))  |> 
+  setDT()
+data_soil_summ[, variable := gsub("\n", "", variable)]
+data_soil_summ <- 
+  data_soil_summ[, .(value = mean(as.numeric(value), na.rm = TRUE)), .(N_PLOT, variable)] |> 
+  dcast(N_PLOT ~ variable)
+data_soil_summ[, fine_soil := CLAY + `FINE SILT`] 
+data_sim <- merge(data_sim, data_soil_summ)  
+```
+
 
 ## Statistical analysis
 
@@ -508,6 +547,181 @@ The estimated AGC and SOC stocks were log-transformed for all statistical tests 
 The uncertainty on plot-level AGC was calculated with the AGBmonteCarlo function from the R package BIOMASS, using a (rather conservative) coefficient of variation of 15% on height measurements [@Hunter2013] and large and small errors for 5 and 95% of trees, respectively [@Chave2004;@Rejou-Mechain2017]. To propagate uncertainty on SOC estimates, we used a coefficient of variation of 12% for organic carbon (as recommended by Cirad laboratories in Montpellier, France), and 10% for the mass of the fine fraction [@Page1999].
 
 We then propagated these uncertainties using a Monte Carlo method (1000 iterations). For single plot estimates of carbon stocks, medians and 95% confidence intervals were estimated as quantiles of the results of the 1000 iterations. For multiplot estimates of carbon stocks, values within each grouping factor were additionally bootstrapped before calculating quantiles (median and 95% confidence intervals). 
+
+```{r}
+stan_model <- "
+data {
+  int<lower=0> N;
+  int<lower=1> AF;
+  int<lower=1> S;
+  int<lower=1,upper=AF> afs[N];
+  int<lower=1,upper=S> site[N];
+  real clay_sc[N];
+  real agc_sc[N];
+  real<lower=0> agc[N];
+  real<lower=0> soc[N];
+  real<lower=0> soc10[N];
+}
+
+parameters {
+  real mu_a;
+  real delta_afs_a[AF];
+  real delta_site_a[S];
+  real<lower=0> sigma_a;
+  
+  real mu_s;
+  real delta_afs_s[AF];
+  real delta_site_s[S];
+  real theta_agc_s;
+  real theta_clay_s;
+  real<lower=0> sigma_s;
+  
+  real mu_s10;
+  real delta_afs_s10[AF];
+  real delta_site_s10[S];
+  real theta_agc_s10;
+  real theta_clay_s10;
+  real<lower=0> sigma_s10;
+  
+  real<lower=0> sigma_site_a;
+  real<lower=0> sigma_afs_a;
+  real<lower=0> sigma_site_s;
+  real<lower=0> sigma_afs_s;
+  real<lower=0> sigma_site_s10;
+  real<lower=0> sigma_afs_s10;
+  
+}
+
+model {
+  real pred_a[N];
+  real pred_s[N];
+  real pred_s10[N];
+  
+  for (i in 1:N) {
+    pred_a[i] = mu_a + delta_afs_a[afs[i]] + delta_site_a[site[i]];
+    pred_s[i] = mu_s + theta_agc_s*agc_sc[i] + theta_clay_s*clay_sc[i] + delta_afs_s[afs[i]] + delta_site_s[site[i]];
+    pred_s10[i] = mu_s10 + theta_agc_s10*agc_sc[i] + theta_clay_s10*clay_sc[i] + delta_afs_s10[afs[i]] + delta_site_s10[site[i]];
+  }
+  
+  agc ~ normal(pred_a, sigma_a);
+  soc ~ normal(pred_s, sigma_s);
+  soc10 ~ normal(pred_s10, sigma_s);
+  
+  // random effects
+  delta_afs_a ~ normal(0, sigma_afs_a);
+  delta_afs_s ~ normal(0, sigma_afs_s);
+  delta_afs_s10 ~ normal(0, sigma_afs_s10);
+  delta_site_s ~ normal(0, sigma_site_s);
+  delta_site_s10 ~ normal(0, sigma_site_s10);
+  delta_site_a ~ normal(0, sigma_site_a);
+  
+  //  priors
+  theta_agc_s ~ normal(0,1);
+  theta_agc_s10 ~ normal(0,1);
+  theta_clay_s ~ normal(0,1);
+  theta_clay_s10 ~ normal(0,1);
+  sigma_a ~ normal(0,1);
+  sigma_s ~ normal(0,1);
+  sigma_s10 ~ normal(0,1);
+  sigma_site_a ~ normal(0,1);
+  sigma_afs_a ~ normal(0,1);
+  sigma_site_s ~ normal(0,1);
+  sigma_afs_s ~ normal(0,1);
+  sigma_site_s10 ~ normal(0,1);
+  sigma_afs_s10 ~ normal(0,1);
+}
+
+"
+```
+
+```{r stan}
+if (!dir.exists("outputs")) dir.create("outputs")
+
+if (!file.exists("outputs/data_par.csv")) {
+  library(parallel)
+  
+  cl <- makeCluster(detectCores()-1)
+  clusterEvalQ(cl, {library(rstan); library(data.table)})
+  clusterExport(cl, "data_sim"); clusterEvalQ(cl, data_sim)
+  clusterExport(cl, "stan_model"); clusterEvalQ(cl, stan_model)
+  
+  data_par <- parLapply(cl, unique(data_sim$iter), function(i) {
+    rstan_options(auto_write = TRUE)
+    
+    data_stan <- data_sim |> 
+      subset(iter==i) |> 
+      dcast(N_PLOT + site + ID_AF + fine_soil ~ variable) |> 
+      with(
+        list(
+          N = length(N_PLOT),
+          AF = length(unique(ID_AF)),
+          S = length(unique(site)),
+          afs = as.numeric(as.factor(ID_AF)), 
+          site = as.numeric(as.factor(site)), 
+          clay_sc = (fine_soil-mean(fine_soil))/sd(fine_soil),
+          agc_sc = (AGC-mean(AGC))/sd(AGC),
+          agc = AGC,
+          soc = SOC,
+          soc10 = SOC10
+        )) 
+    
+    fit <- stan(model_code = stan_model, data = data_stan, 
+                iter = 60, warmup = 50, chains = 1)
+    pars <- extract(fit) |> 
+      lapply(function(x) {
+        df <- data.table(iter_stan = 1:dim(x)[1], x) |> 
+          melt(id.vars = "iter_stan", variable.name = "level_num")  
+        return(df)
+      }) |> 
+      rbindlist(idcol = "param")
+    return(pars)
+  }) |> rbindlist(idcol = "iter")
+  
+  write.csv(data_par, file = "outputs/data_par.csv", row.names = FALSE)
+  
+  stopCluster(cl)
+  
+} else data_par <- read.csv("outputs/data_par.csv") |> setDT()
+
+data_par[, effect := tstrsplit(param, "_")[[2]]]
+data_par[! effect %in% c("afs", "site", "agc", "clay"), effect := NA]
+data_par[, stock := tstrsplit(param, "_")[[3]]]
+data_par[is.na(stock) & param != "lp__", stock := tstrsplit(param, "_")[[2]]]
+data_par[stock == "a", stock := "agc"]
+data_par[stock == "s", stock := "soc"]
+data_par[stock == "s10", stock := "soc10"]
+data_par[, param := tstrsplit(param, "_")[[1]]]
+
+data_par[, level_num := as.numeric(gsub("V", "", level_num))]
+data_par[effect == "afs" & !is.na(level_num), 
+         level := levels(as.factor(data_sim$ID_AF))[level_num]]
+data_par[effect == "site" & !is.na(level_num),
+         level := levels(as.factor(data_sim$site))[level_num]]
+
+df_mu_delta <- 
+  data_par[param == "delta" & !is.na(effect)] |> 
+  dcast(iter + iter_stan + stock + effect + level ~ param) |> 
+  merge(dcast(data_par[param == "mu"], iter + iter_stan + stock ~ param))
+df_mu_delta[, `:=`(value = mu + delta, param = "pred_med")]
+data_par <- rbind(
+  data_par[, c("param", "iter", "iter_stan", "stock", "effect", "level", "value")], 
+  df_mu_delta[, c("param", "iter", "iter_stan",  "stock", "effect", "level", "value")]
+)
+
+itermaxlp = data_par[param == "lp", iter[which.max(value)]]
+pars_summary <- data_par[, .(
+  mean = mean(value), 
+  maxlp = value[iter==itermaxlp],
+  low95 = quantile(value, 0.025), 
+  low80 = quantile(value, 0.1), 
+  med = median(value), 
+  upp80 = quantile(value, 0.9),
+  upp95 = quantile(value, 0.975)
+), .(
+  param, stock, effect, level
+)]
+```
+
 
 ```{r boot-results}
 # plot level statistics
@@ -780,7 +994,6 @@ g3 = ggplot(data_plot) +
 l1 = get_legend(g3)
 
 ggarrange(ggarrange(g1, l1), g2, ncol = 1, heights = c(1,2))
-ggsave("fig1.pdf")
 ```
 
 </br>
@@ -798,19 +1011,63 @@ ggplot(dataC_afs_site[variable %in% c("AGC", "BGC", "SOC")],
   theme(strip.placement = "outside") +
   labs(x = "", y = expression("Carbon stocks (Mg C"*" "*ha^{-1}*")"), fill = "Carbon\npool") +
   scale_y_continuous(expand = c(0, 0))
-ggsave("fig2.pdf")
 ```
 
 </br>
 
+```{r fig.id = "effect-afs-site", fig.width = 7, fig.height = 3}
+labels_stock = function(x) paste(toupper(x), "(Mg/ha)")
+labels_effect = function(x) ifelse(x %in% c("afs", "agc"), toupper(x), x)
+
+pars_summary |> 
+  subset(param == "pred_med" & stock != "soc10") |> 
+  ggplot(aes(y = level)) + 
+  geom_segment(aes(x = low95, xend = upp95)) + 
+  geom_segment(aes(x = low80, xend = upp80), col = 2, lwd = 3) + 
+  geom_point(aes(x = mean), size = 2) +
+  facet_grid(
+    effect ~ stock, scales = "free", 
+    labeller = labeller(stock = labels_stock, effect = labels_effect)) +
+  labs(x=NULL, y = NULL) +
+  theme_bw()
+```
+
+```{r fig.id = "effect-agc-clay", fig.width = 7, fig.height = 2}
+labels_effect = function(x) ifelse(x=="agc", "AGC", "clay + fine silt")
+pars_summary |> 
+  subset(param == "theta")  |> 
+  ggplot(aes(y = ifelse(stock=="soc10", "0-10 cm", "0-30 cm"))) + 
+  geom_vline(xintercept = 0, lty = 2) +
+  geom_segment(aes(x = low95, xend = upp95)) + 
+  geom_segment(aes(x = low80, xend = upp80), col = 2, lwd = 3) + 
+  geom_point(aes(x = mean), size = 2) +
+  facet_wrap(~effect, labeller = labeller(effect = labels_effect)) + 
+  labs(x="Effect on SOC", y = NULL) +
+  theme_bw()
+```
+
 ```{r fig.id = "plot-lmereg", fig.height = 3.5, fig.width = 7, fig.cap = "Scatter plot of aboveground carbon (AGC; x-axis) and soil organic carbon (SOC; y-axis) stocks. SOC stocks were estimated at the topsoil layer (0-10 cm; left panel) and at the total measured depth (0-30 cm; right panel). Each point represents the median C stock value in a sample plot, and the vertical and horizontal error bars are the 95% confidence interval. The colors correspond to the different agroforestry systems (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden); the different shapes represent the two sites. The dotted lines represent the (non-significant) linear mixed models between log-transformed AGC and SOC stocks. For each linear mixed model, we report the marginal R^2^ (proportion of variance explained by fixed effects only) and the conditional R^2^ (proportion of variance explained by both fixed and random effects). Both x- and y-axes are log-transformed. One plot (AFS: CF, site: Gariuai) with no trees over 30 cm in circumference at breast height (minimum size for measurement) had AGC stocks estimated at 0 Mg C ha^-1^ and was therefore removed from the linear model and the figure."}
-dfpred = expand.grid(AGC_mean = exp(seq(min(log(data_reg$AGC_mean), na.rm = TRUE),
-                                        max(log(data_reg$AGC_mean), na.rm = TRUE),
-                                        length.out = 20)),
-                     depth = c("Soil depth: 0-30 cm", "Soil depth: 0-10 cm")) |>
-  merge(dfreg[, c("depth", "intercept", "slope")], by = "depth")
-setDT(dfpred)
-dfpred[, SOC_mean := exp(intercept + slope * log(AGC_mean))]
+
+dfpred <- expand.grid(agc = seq(0, 170, length.out = 20), 
+  iter = unique(data_par$iter), 
+  iter_stan = unique(data_par$iter_stan)
+) |> 
+  merge(
+    data_par[grepl("soc", stock) & (param =="mu" | effect == "agc")] |> 
+      dcast(iter + iter_stan + stock ~ param)
+  ) |> 
+  merge(
+    data_sim[variable=="AGC", .(mua = mean(value), sda = sd(value)), 
+             .(iter = as.numeric(as.factor(iter)))]
+  ) |> setDT()
+dfpred[, pred := (mu - mua*theta/sda) + (theta/sda) * agc]
+dfpred <- dfpred[, .(
+  mean = mean(pred), 
+  lower = quantile(pred, 0.025), 
+  upper = quantile(pred, 0.975)
+  ), .(agc, stock)]
+dfpred[, depth := ifelse(grepl(10, stock), "Soil depth: 0-10 cm", "Soil depth: 0-30 cm")]
+
 
 # stack data for figure
 dataC_30 = data_reg[, c("plot", "site", "afs",  
@@ -827,26 +1084,26 @@ dataC_fig = rbind(dataC_10, dataC_30)
 ## reorder factors 
 dataC_fig[, afs := factor(afs, levels = c("CF", "SP", "YA", "HG", "FG"))]
 
-
 ## figure
 ggplot(dataC_fig, aes(color = afs)) +
+  geom_ribbon(data = dfpred, aes(x = agc, ymin = lower, ymax = upper), 
+              col = NA, alpha = 0.1) +
   geom_point(aes(x = AGC_mean, y = SOC_mean, shape = site), size = 2) +
-  geom_text(data = dfreg, aes(label = paste0("R^{2}*' (marg.) = '*", round(R2_marg, 3))),
-            x = -Inf, y = Inf, hjust = -0.1, vjust = 1.2, parse = TRUE, color = 1) +
-  geom_text(data = dfreg, aes(label = paste0("R^{2}*' (cond.) = '*", round(R2_cond, 3))),
-            x = -Inf, y = Inf, hjust = -0.1, vjust = 2.2, parse = TRUE, color = 1) +
+  # geom_text(data = dfreg, aes(label = paste0("R^{2}*' (marg.) = '*", round(R2_marg, 3))),
+  #           x = -Inf, y = Inf, hjust = -0.1, vjust = 1.2, parse = TRUE, color = 1) +
+  # geom_text(data = dfreg, aes(label = paste0("R^{2}*' (cond.) = '*", round(R2_cond, 3))),
+  #           x = -Inf, y = Inf, hjust = -0.1, vjust = 2.2, parse = TRUE, color = 1) +
   geom_linerange(aes(x = AGC_mean, y = SOC_mean, ymin = SOC_lwr, ymax = SOC_upr)) +
   geom_errorbarh(aes(y = SOC_mean, xmin = AGC_lwr, xmax = AGC_upr)) +
-  geom_line(data = dfpred, aes(x = AGC_mean, y = SOC_mean), lty = 2, col = 1) +
+  geom_line(data = dfpred, aes(x = agc, y = mean), lty = 2, col = 1) +
   labs(color = "AFS", x = expression("AGC stocks (Mg C"*" "*ha^{-1}*")"), 
        y = expression("SOC stocks (Mg C"*" "*ha^{-1}*")"), shape = "Site") +
   expand_limits(x = 0, y = 0) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#E6AB02")) +
-  scale_x_log10() +
-  scale_y_log10() +
+  # scale_x_log10() +
+  # scale_y_log10() +
   facet_wrap(~depth) +
   theme_classic()
-ggsave("fig3.pdf")
 ```
 
 
@@ -857,171 +1114,206 @@ ggsave("fig3.pdf")
 
 # Supplementary information
 
-## Tables 
+## Supplementary methods
 
-```{r site-soil-char}
-data_soil[, Corg := `Corg\n`]
-data_soil[, muCorg := mean(Corg, na.rm = TRUE), .(N_PLOT)]
-data_soil[is.na(Corg), Corg := muCorg]
+### Calculation of 10-20 cm average carbon content
 
-data_soil[, c("h0", "h1") := lapply(tstrsplit(SAMPLE_DEPTH, "-"), as.numeric)]
-
-data_soil$silt <- as.numeric(data_soil$`FINE SILT`) + as.numeric(data_soil$`COARSE SILT`)
-data_soil$sand <- as.numeric(data_soil$`FINE SAND`) + as.numeric(data_soil$`COARSE SAND`)
-
-# add site info to data_soil 
-data_soil_plot <- merge(data_soil, data_plot[, c("N_PLOT", "site")])
-
-# choose variables to show
-vars = c("Corg\n", "N", "Corg_N", "CLAY", "silt", "sand", "pH\n", "Ca", "Mg\n", "K", "Na", "CEC\n")
-
-data_soil_plot = melt(data_soil_plot, 
-                      id.vars = c("N_PLOT", "SAMPLE_DEPTH", "site"), 
-                      measure.vars = vars)
-
-data_soil_plot[, variable := gsub("\n", "", variable)]
-
-# when value below detection limit: use half of detection value
-data_soil_plot[grepl("LD", value), value := as.numeric(strsplit(value, "=")[[1]][2])/2]
-data_soil_plot[, value := as.numeric(value)]
-
-# remove NA values
-data_soil_plot = subset(data_soil_plot, !is.na(value))
-
-# simulation 1000 values per plot, soil depth and variable with a 12% coefficient
-# of variation (CV value from lab)
-data_soil_plot_simu = 
+During field data collection, because the auger length (15 cm) didn't match the target soil sampling depths (10 cm each), we could only accurately sample and analyse the 0-10 cm and 20-30 cm soil depths for SOC content. The SOC content of the intermediate 10-20 cm soil depth had to be estimated based on these first two measurements. 
+  
+  To reduce the bias in this estimation, we used the standard assumption that SOC content $c(x)$ decreases as an exponential function of soil depth $x$: 
+  
+  $$c(x) = C_0 \cdot exp(-\lambda\cdot x) $$ 
+  where $C_0$ is the carbon content at the surface (depth $x= 0$) and $\lambda$ is the rate at which the carbon content decreases with soil depth. 
+  Under this assumption, we can calculate the mean SOC content between depths $x$ and $x+\Delta$ as: 
+  
+  $$\bar c(x, x+\Delta) = \frac{1}{\Delta}\int_{x}^{x+\Delta}  C_0 \cdot exp(-\lambda\cdot x) dx$$
+  
+  $$ \Rightarrow \bar c(x, x+\Delta) = \frac{C_0}{-\lambda \cdot \Delta} \left[ exp(-\lambda\cdot (x+\Delta)) - exp(-\lambda\cdot x) \right]$$
+  
+  $$ \Rightarrow \bar c(x, x+\Delta) = \frac{C_0}{\lambda \cdot \Delta} exp(-\lambda\cdot x)\left[1- exp(-\lambda\cdot\Delta) \right]$$
+  The average SOC contents between 0-10 cm, 10-20 cm and 20-30 cm can respectively be written as: 
+  
+  $$C_{0,10} = \frac{C_0}{10\lambda}\left(1- exp(-10\lambda) \right)$$
+  
+  $$C_{10,20} = \frac{C_0}{10\lambda} exp(-10\lambda)\left(1- exp(-10\lambda) \right)$$
+  
+  $$C_{20,30} = \frac{C_0}{10\lambda} exp(-20\lambda)\left(1- exp(-10\lambda) \right)$$
+  We can thus write: 
+  
+  $$\frac{C_{20,30}}{C_{0,10}} = \frac{\frac{C_0}{10\lambda} exp(-20\lambda)\left(1- exp(-10\lambda) \right)}{\frac{C_0}{10\lambda}\left(1- exp(-10\lambda) \right)} = exp(-20\lambda)$$
+  $$ \Rightarrow \lambda = \frac{log(\frac{C_{0,10}}{C_{20,30}})}{20}$$
+  We can also write: 
+  
+  $$ \frac{C_{10,20}}{C_{0,10}} = exp(-10\lambda) $$
+  $$\Rightarrow C_{10,20} = C_{0,10} \cdot exp(-10 \cdot \frac{log(\frac{C_{0,10}}{C_{20,30}})}{20})$$
+  
+  $$ \Rightarrow C_{10,20} = C_{0,10} \cdot \left( \frac{C_{20,30}}{C_{0,10}}\right)^{\frac{1}{2}}$$
+  
+  ## Tables 
+  
+  ```{r site-soil-char}
+  data_soil[, Corg := `Corg\n`]
+  data_soil[, muCorg := mean(Corg, na.rm = TRUE), .(N_PLOT)]
+  data_soil[is.na(Corg), Corg := muCorg]
+  
+  data_soil[, c("h0", "h1") := lapply(tstrsplit(SAMPLE_DEPTH, "-"), as.numeric)]
+  
+  data_soil$silt <- as.numeric(data_soil$`FINE SILT`) + as.numeric(data_soil$`COARSE SILT`)
+  data_soil$sand <- as.numeric(data_soil$`FINE SAND`) + as.numeric(data_soil$`COARSE SAND`)
+  
+  # add site info to data_soil 
+  data_soil_plot <- merge(data_soil, data_plot[, c("N_PLOT", "site")])
+  
+  # choose variables to show
+  vars = c("Corg\n", "N", "Corg_N", "CLAY", "silt", "sand", "pH\n", "Ca", "Mg\n", "K", "Na", "CEC\n")
+  
+  data_soil_plot = melt(data_soil_plot, 
+  id.vars = c("N_PLOT", "SAMPLE_DEPTH", "site"), 
+  measure.vars = vars)
+  
+  data_soil_plot[, variable := gsub("\n", "", variable)]
+  
+  # when value below detection limit: use half of detection value
+  data_soil_plot[grepl("LD", value), value := as.numeric(strsplit(value, "=")[[1]][2])/2]
+  data_soil_plot[, value := as.numeric(value)]
+  
+  # remove NA values
+  data_soil_plot = subset(data_soil_plot, !is.na(value))
+  
+  # simulation 1000 values per plot, soil depth and variable with a 12% coefficient
+  # of variation (CV value from lab)
+  data_soil_plot_simu = 
   data_soil_plot[, .(
-    value = rnorm(1000, value, sd = 0.12*value), n = 1:1000), 
-    .(site, N_PLOT, SAMPLE_DEPTH, variable)]
-
-# bootstrap plot values to get mean value at the site level (for each simulation)
-data_soil_site_simu = 
+  value = rnorm(1000, value, sd = 0.12*value), n = 1:1000), 
+  .(site, N_PLOT, SAMPLE_DEPTH, variable)]
+  
+  # bootstrap plot values to get mean value at the site level (for each simulation)
+  data_soil_site_simu = 
   data_soil_plot_simu[, .(
-    value = mean(sample(value, length(value), replace = TRUE))),
-    .(site, variable, n)]
-
-# convert sand, silt, clay and C content from % into g/kg
-data_soil_site_simu[ variable %in% c("Corg", "CLAY", "sand", "silt"), value := value*10]
-
-# calculate mean and 95% confidence interval at site level
-data_soil_site  = data_soil_site_simu[, .(
+  value = mean(sample(value, length(value), replace = TRUE))),
+  .(site, variable, n)]
+  
+  # convert sand, silt, clay and C content from % into g/kg
+  data_soil_site_simu[ variable %in% c("Corg", "CLAY", "sand", "silt"), value := value*10]
+  
+  # calculate mean and 95% confidence interval at site level
+  data_soil_site  = data_soil_site_simu[, .(
   mean = signif(mean(value), 3), 
   lwr = signif(quantile(value, 0.025), 3),
   upr = signif(quantile(value, 0.975), 3)
   ), 
   .(site, variable)]
-data_soil_site[, value := paste0(round(mean, 1), " (", round(lwr, 1), "-", round(upr, 1), ")")]
-data_soil_site[variable %in% c("K", "Mg", "Na"), value := paste0(round(mean, 2), " (", round(lwr, 2), "-", round(upr, 2), ")")]
-
-# change table shape to have one column per variable
-data_soil_site = dcast(data_soil_site, site ~ variable, value.var = "value")
-
-## add unit row
-data_soil_site = data_soil_site[, c("site", "CLAY", "silt", "sand", "Corg", "N", "Corg_N", "pH", "CEC", "Ca", "K", "Mg", "Na")]
-colnames(data_soil_site) = c(" ", "Clay", "Silt", "Sand", "C content", "N content", "C:N", "pH", "CEC", "Ca", "K", "Mg", "Na")
-```
-
-```{r tab.id = "site-soil", tab.lp="supp-tab", results = "show", tab.cap.pre="Table S", tab.cap = "Soil characteristics of the sites (average over 0-30 cm), presented as mean values with 95% confidence intervals (in parentheses). Units are: in g/kg for clay, silt, sand, C and N contents; in cmolc/kg for CEC, Ca, K, Mg and Na; and no units for C:N and pH. The confidence intervals were calculated by propagating a 12% error on the lab-provided values and obtaining site-level estimates through bootstrapping plot values (1000 simulations). Total organic carbon content (dry combustion method) ; total nitrogen content (dry combustion method) ; pH in water (soil:deionized water ratio of 1:2.5) ; CEC - cation exchangeable capacity - and exchangeable cations (Ca, K, Mg and Na) at soil pH [Cobaltihexamine method; Orsini and Remy, 1976]."}
-flextable(data_soil_site, cwidth = 0.5)
-```
-
-</br>
-
-```{r tab.id = "afs-typology", tab.cap.pre="Table S", tab.cap = "Description of 5 agroforestry systems in Central Timor-Leste.", tab.autonum.start_at=1, tab.lp="supp-tab", results = "show"}
-read_excel("tables/afs-typology.xlsx") |> 
+  data_soil_site[, value := paste0(round(mean, 1), " (", round(lwr, 1), "-", round(upr, 1), ")")]
+  data_soil_site[variable %in% c("K", "Mg", "Na"), value := paste0(round(mean, 2), " (", round(lwr, 2), "-", round(upr, 2), ")")]
+  
+  # change table shape to have one column per variable
+  data_soil_site = dcast(data_soil_site, site ~ variable, value.var = "value")
+  
+  ## add unit row
+  data_soil_site = data_soil_site[, c("site", "CLAY", "silt", "sand", "Corg", "N", "Corg_N", "pH", "CEC", "Ca", "K", "Mg", "Na")]
+  colnames(data_soil_site) = c(" ", "Clay", "Silt", "Sand", "C content", "N content", "C:N", "pH", "CEC", "Ca", "K", "Mg", "Na")
+  ```
+  
+  ```{r tab.id = "site-soil", tab.lp="supp-tab", results = "show", tab.cap.pre="Table S", tab.cap = "Soil characteristics of the sites (average over 0-30 cm), presented as mean values with 95% confidence intervals (in parentheses). Units are: in g/kg for clay, silt, sand, C and N contents; in cmolc/kg for CEC, Ca, K, Mg and Na; and no units for C:N and pH. The confidence intervals were calculated by propagating a 12% error on the lab-provided values and obtaining site-level estimates through bootstrapping plot values (1000 simulations). Total organic carbon content (dry combustion method) ; total nitrogen content (dry combustion method) ; pH in water (soil:deionized water ratio of 1:2.5) ; CEC - cation exchangeable capacity - and exchangeable cations (Ca, K, Mg and Na) at soil pH [Cobaltihexamine method; Orsini and Remy, 1976]."}
+  flextable(data_soil_site, cwidth = 0.5)
+  ```
+  
+  </br>
+  
+  ```{r tab.id = "afs-typology", tab.cap.pre="Table S", tab.cap = "Description of 5 agroforestry systems in Central Timor-Leste.", tab.autonum.start_at=1, tab.lp="supp-tab", results = "show"}
+  read_excel("tables/afs-typology.xlsx") |> 
   flextable(col_keys = c(
-    "Typology adapted from Nair (1993)",
-    "Usual location", 
-    "Typical plot size (ha)", 
-    "Time since installation", 
-    "Previous land use"), 
-    cwidth = c(1.5, 1.5, 1, 1, 1.5)) 
-```
-
-</br>
-
-```{r tetum-scientific-correspondance}
-sheets1 = grep("INV", excel_sheets("data/DATA_BIOMASS_TL_LARGE.xlsx"), value = TRUE)
-sheets2 = grep("INV", excel_sheets("data/DATA_BIOMASS_TL_SHORT.xlsx"), value = TRUE)
-
-vern1 <- lapply(sheets1, \(x){
+  "Typology adapted from Nair (1993)",
+  "Usual location", 
+  "Typical plot size (ha)", 
+  "Time since installation", 
+  "Previous land use"), 
+  cwidth = c(1.5, 1.5, 1, 1, 1.5)) 
+  ```
+  
+  </br>
+  
+  ```{r tetum-scientific-correspondance}
+  sheets1 = grep("INV", excel_sheets("data/DATA_BIOMASS_TL_LARGE.xlsx"), value = TRUE)
+  sheets2 = grep("INV", excel_sheets("data/DATA_BIOMASS_TL_SHORT.xlsx"), value = TRUE)
+  
+  vern1 <- lapply(sheets1, \(x){
   df = read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x)
   df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |>
-    unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
-})
-vern2 <- lapply(sheets2, \(x){
+  unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
+  })
+  vern2 <- lapply(sheets2, \(x){
   df = read_excel("data/DATA_BIOMASS_TL_LARGE.xlsx", sheet = x)
   df = df[, c("TETUM_NAME", "SCIENTIFIC_NAME")] |>
-    unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
-})
-
-vern = rbind(rbindlist(vern1), rbindlist(vern2)) |>  unique()
-vern <- subset(vern, !is.na(TETUM_NAME) & !is.na(SCIENTIFIC_NAME))
-
-## correct typos in vernacular names
-vern[, TETUM_NAME := tolower(gsub(" oan| kain| restu| hun restu", "", TETUM_NAME))]
-vern[grep("kami", TETUM_NAME), TETUM_NAME := "ai-kamii"]
-vern[, TETUM_NAME := gsub("ai-haek", "ai-hanek", TETUM_NAME)]
-vern[, TETUM_NAME := gsub("ai-bobur", "ai-bubur", TETUM_NAME)]
-vern[, TETUM_NAME := gsub("duut", "du'ut", TETUM_NAME)]
-vern[, TETUM_NAME := gsub("aifarina", "ai-farina", TETUM_NAME)]
-vern[, TETUM_NAME := gsub("aitarak", "ai-tarak", TETUM_NAME)]
-vern[, TETUM_NAME := gsub("ainanas", "ai-nanas", TETUM_NAME)]
-vern[, TETUM_NAME := gsub("fore tali", "fore-tali", TETUM_NAME)]
-vern[, TETUM_NAME := gsub("kromolaina", "kromolaena", TETUM_NAME)]
-
-## correct scientific names
-vern[, c("genus", "species") := tstrsplit(SCIENTIFIC_NAME, " ")[1:2]]
-vern[species %in% c("sp", "sp."), species := NA]
-vern[species == "purpuroides", species := NA]
-corr = correctTaxo(genus = vern$genus, species = vern$species)
-vern = cbind(vern, corr)
-
-vern[, latin := paste(genusCorrected, speciesCorrected)]
-vern[, latin := gsub(" NA", " sp.", latin)]
-vern[,tetum := gsub("  ", " ", tolower(TETUM_NAME))]
-vern <- vern[, c("tetum", "latin", "genusCorrected", "speciesCorrected")]
-vern = unique(vern)
-
-# check that all names are unique
-# if one tetum name has two levels of id (same genus), keep better identification
-dupl_tetum <- vern[duplicated(tetum), unique(tetum)]
-vern = vern[!(tetum %in% dupl_tetum & is.na(speciesCorrected))]
-setorder(vern, latin)
-
-vern = vern[, .(tetum = paste(tetum, collapse = ", ")), .(latin)]
-``` 
-
-```{r tab.id = "tetum-names", tab.lp="supp-tab", results = "show", tab.cap.pre="Table S", tab.cap = "Correspondence between Tetum names and scientific names used in this study."}
-flextable(vern) |> 
+  unique() |>  subset(!SCIENTIFIC_NAME %in% c("Unknown", "NR", "Unkown"))
+  })
+  
+  vern = rbind(rbindlist(vern1), rbindlist(vern2)) |>  unique()
+  vern <- subset(vern, !is.na(TETUM_NAME) & !is.na(SCIENTIFIC_NAME))
+  
+  ## correct typos in vernacular names
+  vern[, TETUM_NAME := tolower(gsub(" oan| kain| restu| hun restu", "", TETUM_NAME))]
+  vern[grep("kami", TETUM_NAME), TETUM_NAME := "ai-kamii"]
+  vern[, TETUM_NAME := gsub("ai-haek", "ai-hanek", TETUM_NAME)]
+  vern[, TETUM_NAME := gsub("ai-bobur", "ai-bubur", TETUM_NAME)]
+  vern[, TETUM_NAME := gsub("duut", "du'ut", TETUM_NAME)]
+  vern[, TETUM_NAME := gsub("aifarina", "ai-farina", TETUM_NAME)]
+  vern[, TETUM_NAME := gsub("aitarak", "ai-tarak", TETUM_NAME)]
+  vern[, TETUM_NAME := gsub("ainanas", "ai-nanas", TETUM_NAME)]
+  vern[, TETUM_NAME := gsub("fore tali", "fore-tali", TETUM_NAME)]
+  vern[, TETUM_NAME := gsub("kromolaina", "kromolaena", TETUM_NAME)]
+  
+  ## correct scientific names
+  vern[, c("genus", "species") := tstrsplit(SCIENTIFIC_NAME, " ")[1:2]]
+  vern[species %in% c("sp", "sp."), species := NA]
+  vern[species == "purpuroides", species := NA]
+  corr = correctTaxo(genus = vern$genus, species = vern$species)
+  vern = cbind(vern, corr)
+  
+  vern[, latin := paste(genusCorrected, speciesCorrected)]
+  vern[, latin := gsub(" NA", " sp.", latin)]
+  vern[,tetum := gsub("  ", " ", tolower(TETUM_NAME))]
+  vern <- vern[, c("tetum", "latin", "genusCorrected", "speciesCorrected")]
+  vern = unique(vern)
+  
+  # check that all names are unique
+  # if one tetum name has two levels of id (same genus), keep better identification
+  dupl_tetum <- vern[duplicated(tetum), unique(tetum)]
+  vern = vern[!(tetum %in% dupl_tetum & is.na(speciesCorrected))]
+  setorder(vern, latin)
+  
+  vern = vern[, .(tetum = paste(tetum, collapse = ", ")), .(latin)]
+  ``` 
+  
+  ```{r tab.id = "tetum-names", tab.lp="supp-tab", results = "show", tab.cap.pre="Table S", tab.cap = "Correspondence between Tetum names and scientific names used in this study."}
+  flextable(vern) |> 
   set_header_labels(values =  c("Scientific name", "Tetum name")) |> 
   autofit() |> 
   italic(j=1)
-```
-
-## Figures 
-
-```{r fig.id="design", fig.cap = "Plot sampling design. (a) Typical plot < 1 ha, in all AFS except SPs. (b) Typical 1-ha plot in SPs. Red areas are the five 10x10 m subplots, and blue dots are the three soil sampling locations.", fig.autonum.start_at=1, fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 5, fig.height = 3}
-include_graphics("figures/plot-design.jpg") 
-```
-
-</br>
-
-```{r fig.id="seq-diagram", fig.cap = "Typical sequence of AFS in the sites included in this study. Transitions between two systems are represented by arrows: dashed arrows represent transitions that usually include tree removal, whereas solid arrows represent transitions where trees are planted and/or the AFS is left to regenerate naturally. These transitions may vary according to the farmer's strategy and available resources (Cogné and Lescuyer, 2024).", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 8, fig.height = 2.2, out.width="50%"}
-# save_png <- function(plot, path){
-#   DiagrammeRsvg::export_svg(plot) %>%
-#     charToRaw() %>%
-#     rsvg::rsvg() %>%
-#     png::writePNG(path)
-# }
-# 
-# DiagrammeR::grViz("
-#       digraph {
-#       graph [layout = dot, rankdir = LR]
-# 
-#       node [shape = ellipse]
-#       CF[color = '#1B9E77'];
+  ```
+  
+  ## Figures 
+  
+  ```{r fig.id="design", fig.cap = "Plot sampling design. (a) Typical plot < 1 ha, in all AFS except SPs. (b) Typical 1-ha plot in SPs. Red areas are the five 10x10 m subplots, and blue dots are the three soil sampling locations.", fig.autonum.start_at=1, fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 5, fig.height = 3}
+  include_graphics("figures/plot-design.jpg") 
+  ```
+  
+  </br>
+  
+  ```{r fig.id="seq-diagram", fig.cap = "Typical sequence of AFS in the sites included in this study. Transitions between two systems are represented by arrows: dashed arrows represent transitions that usually include tree removal, whereas solid arrows represent transitions where trees are planted and/or the AFS is left to regenerate naturally. These transitions may vary according to the farmer's strategy and available resources (Cogné and Lescuyer, 2024).", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 8, fig.height = 2.2, out.width="50%"}
+  # save_png <- function(plot, path){
+  #   DiagrammeRsvg::export_svg(plot) %>%
+  #     charToRaw() %>%
+  #     rsvg::rsvg() %>%
+  #     png::writePNG(path)
+  # }
+  # 
+  # DiagrammeR::grViz("
+  #       digraph {
+  #       graph [layout = dot, rankdir = LR]
+  # 
+  #       node [shape = ellipse]
+  #       CF[color = '#1B9E77'];
 #       SP[color = '#D95F02'];
 #       YA[color = '#7570B3'];
 #       HG[color = '#E7298A'];
@@ -1051,7 +1343,7 @@ include_graphics("figures/seq_diagram.png")
 ```{r fig.id="altitude-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap = "Effect of plot elevation (x-axis; in m) on SOC stocks (y-axis; in\ Mg\ C\ ha^-1^). Points are colored by site; the point corresponds to the mean prediction at that site, while the error bars correspond to the 95% confidence interval. We performed a linear mixed effects regression with log-transformed SOC stocks as the dependent variable, log-transformed elevation as the independent variable, and site as random effect. Results are presented as regression lines and the p-value of the relationship between SOC stocks and elevation.", fig.cap.pre="Figure S"}
 dataC_plot <- read.csv("dataC_plot.csv") |> setDT()
 dataCelev <- merge(dataC_plot[variable=="SOC", c("plot", "site", "mean", "upr", "lwr")], 
-                  data_plot[, c("N_PLOT", "long", "lat")], by.x = "plot", by.y = "N_PLOT")
+                   data_plot[, c("N_PLOT", "long", "lat")], by.x = "plot", by.y = "N_PLOT")
 
 # extract elevation
 dataCelev[, elev := terra::extract(
