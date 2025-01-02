@@ -74,15 +74,9 @@ Agricultural expansion has been the main driver of tropical deforestation over t
 
 Agroforestry has attracted attention in recent decades as a set of effective agricultural practices that could contribute to climate change mitigation and adaptation [@Albrecht2003; @Verchot2007; @Lasco2014; @Cardinael2021]. Agroforestry is a collective name for land use systems and technologies where woody perennials (trees, shrubs, bamboos, creepers, etc.) are deliberately used on the same land management units as agricultural crops and/or animals, in some form of spatial arrangement or temporal sequence [@Lundgren1982]. Therefore, agroforestry practices allow for the diversification of agricultural production, making agricultural systems more resilient to climate change [@Duffy2021; @Terasaki2023].
 
-Agroforestry systems (AFS) have the potential to store large amounts of carbon in the vegetation biomass and soil, and this carbon storage capacity depends on the type of the AFS in addition to environmental and edaphic conditions [@Albrecht2003; @Feliciano2018]. Since trees can store large amounts of carbon, the carbon stored in vegetation aboveground biomass of AFS is largely dependent on the number and size of trees in the system [@Ma2020]. However, the effect of AFS on soil organic carbon (SOC) is more variable: although AFS appear to increase SOC stocks overall in tropical regions, some AFS such as woodlots (i.e., planting trees with intercropping during the establishment phase) may decrease SOC stocks compared to non-AFS, while AFS such as silvopastures have been shown to strongly increase SOC stocks [@Feliciano2018]. Other factors such as climate and previous land use type can also influence SOC in AFS, which may explain the variability of observations reported in the literature [@Feliciano2018; @Ma2020; @Martin2020]. Furthermore, the relationship between the amount of carbon stored in aboveground vegetation and soil in AFS was only evidenced to a depth of 10 cm [@Ma2020].
+Agroforestry systems (AFS) have the potential to store large amounts of carbon in the vegetation biomass and soil, and this carbon storage capacity depends on the type of the AFS in addition to environmental and edaphic conditions [@Albrecht2003; @Feliciano2018]. Since trees can store large amounts of carbon, the carbon stored in vegetation aboveground biomass of AFS is largely dependent on the number and size of trees in the system [@Ma2020]. However, the effect of AFS on soil organic carbon (SOC) is more variable: although AFS appear to increase SOC stocks overall in tropical regions, some AFS such as woodlots (i.e., planting trees with intercropping during the establishment phase) may decrease SOC stocks compared to non-AFS, while AFS such as silvopastures have been shown to strongly increase SOC stocks [@Feliciano2018]. Other factors such as climate, soil characteristics and previous land use type can also influence SOC in AFS, which may explain the variability of observations reported in the literature [@Feliciano2018; @Ma2020; @Martin2020]. Furthermore, the relationship between the amount of carbon stored in aboveground vegetation and soil in AFS was only evidenced to a depth of 10 cm [@Ma2020].
 
 In Timor-Leste, a large proportion of the population depends on agriculture for their livelihoods. However, population growth, increasing pressure on natural resources, and an increasingly variable climate with an unreliable rainfall regime are threatening food security [@WB2009; @Molyneux2012]. In this context, productive, resilient, and sustainable agriculture is critical for the country and the livelihood of its people. To address this, AFS have been presented as a potential solution to many of the challenges facing Timorese agriculture [@Paudel2022; @Cogne2024]. Although trees already form a large part of traditional agricultural systems in Timor-Leste [@Paudel2022; @Cogne2024] and can be key elements for biodiversity conservation [@Perfecto2008; @Torquebiau1992], they have received little attention and, to our knowledge, no study has quantified carbon storage in traditional Timorese AFS. A precise quantification of these carbon stocks will improve understanding of the ecological importance of AFS at both local and global scales, and help integrate them into national and international climate change mitigation initiatives.
-
-[paragraph on possible drivers]
-C stocks (in biomass and soil) of AFS could be driven by a number of factors: 
-- agricultural practices (ref)
-- climate (ref)
-- soil properties (especially for SOC) > in particular, fine content
 
 In this study, we aim to better understand traditional AFS in Timor-Leste by quantifying the carbon storage in both vegetation biomass and soil of five traditional AFS: cropping systems with fallow, silvopastures, young agroforests, home gardens, and forest gardens. [xxx 2 sites] We hypothesize that there are measurable differences in carbon in aboveground vegetation biomass (hereinafter referred to as above ground carbon or AGC; Hypothesis 1a) and SOC (Hypothesis 1b) stocks between these different types of traditional AFS. In line with @Ma2020, we anticipate that there is a positive relationship between AGC and SOC stocks in the topsoil layer (0-10 cm; Hypothesis 2a), but no relationship with SOC below 10 cm (Hypothesis 2b).
 
@@ -144,7 +138,7 @@ data_plot[site == "G", site := "Gariuai"]
 ```
 
 ```{r get-env-data}
-# temperature and precipitation from CHELSA
+# mean annual temperature from CHELSA
 if (!file.exists("data/CHELSA_bio1_1981-2010_V.2.1.tif")) {
   url <- "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/bio/CHELSA_bio1_1981-2010_V.2.1.tif"
   destfile <- "data/CHELSA_bio1_1981-2010_V.2.1.tif"
@@ -157,6 +151,7 @@ if (!file.exists("data/CHELSA_bio1_1981-2010_V.2.1.tif")) {
   writeRaster(rst, filename = destfile, overwrite = TRUE) 
 } 
 
+# mean annual precipitation from CHELSA
 if (!file.exists("data/CHELSA_bio12_1981-2010_V.2.1.tif")) {
   url <- "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/bio/CHELSA_bio12_1981-2010_V.2.1.tif"
   destfile <- "data/CHELSA_bio12_1981-2010_V.2.1.tif"
@@ -169,12 +164,17 @@ if (!file.exists("data/CHELSA_bio12_1981-2010_V.2.1.tif")) {
   writeRaster(rst, filename = destfile, overwrite = TRUE) 
 } 
 
-# 30m resolution SRTM
-if (!file.exists("data/srtm_62_14.zip")) {
-  url <- "https://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/srtm_62_14.zip"
-  destfile <- "data/srtm_62_14.zip"
+# precipitation variability from CHELSA
+if (!file.exists("data/CHELSA_bio15_1981-2010_V.2.1.tif")) {
+  url <- "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/bio/CHELSA_bio15_1981-2010_V.2.1.tif"
+  destfile <- "data/CHELSA_bio15_1981-2010_V.2.1.tif"
   download.file(url, destfile, method = "curl")
-  unzip(destfile, exdir = "data", overwrite = TRUE)
+  
+  ## crop to reduce memory usage
+  box = c(124.5, 127.5, -9.2, -8.3) # Timor-Leste
+  rst <- terra::rast(destfile)
+  rst <- terra::crop(rst, terra::ext(box))
+  writeRaster(rst, filename = destfile, overwrite = TRUE) 
 } 
 
 # download cwd from Chave et al 2014
@@ -184,6 +184,14 @@ if (!file.exists("data/CWD.tif")) {
   download.file(url, destfile, method = "curl")
   unzip(destfile, exdir = "data", overwrite = TRUE)
 }
+
+# 30m resolution SRTM
+if (!file.exists("data/srtm_62_14.zip")) {
+  url <- "https://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/srtm_62_14.zip"
+  destfile <- "data/srtm_62_14.zip"
+  download.file(url, destfile, method = "curl")
+  unzip(destfile, exdir = "data", overwrite = TRUE)
+} 
 ```
 
 ```{r extract-env-data}
@@ -191,13 +199,15 @@ if (!file.exists("data/CWD.tif")) {
 data_plot[, `:=`(
   elev = terra::extract(terra::rast("data/srtm_62_14.tif"), 
                         cbind(long, lat))[[1]], 
+  temp = terra::extract(terra::rast("data/CHELSA_bio1_1981-2010_V.2.1.tif"), 
+                        cbind(long, lat))[[1]], 
   prec = terra::extract(terra::rast("data/CHELSA_bio12_1981-2010_V.2.1.tif"), 
                         cbind(long, lat))[[1]], 
-  temp = terra::extract(terra::rast("data/CHELSA_bio1_1981-2010_V.2.1.tif"), 
+  varp = terra::extract(terra::rast("data/CHELSA_bio15_1981-2010_V.2.1.tif"), 
+                        cbind(long, lat))[[1]], 
+  cwd = terra::extract(terra::rast("data/CWD.tif"), 
                         cbind(long, lat))[[1]]
 )] 
-
-cor(data_plot[, c("elev", "prec", "temp")])
 
 # extract elevation and rainfall for the 2 sites
 site_env = data_plot[, as.list(expand.grid(seq(min(long), max(long), 0.001), 
@@ -229,19 +239,19 @@ The research was carried out in the center of the Baucau municipality, located o
 
 ## Typology of agroforestry systems
 
-We used the typology of AFS described in @Cogne2024, which was developed in the same study area. This typology was based on the one proposed by Nair *et al.* (1993, 2021) and adapted to the local context with semi-structured interviews previously conducted in another study at the same sites [@Cogne2024]. The five AFS identified were as follows: Crop systems including a wooded Fallow phase (CF), Silvopastures (SP), Young Agroforests (YA), Home Gardens (HG), and Forest Gardens (FG). The AFS are presented in more detail in the supplemental information section (Table S\@ref(tab:afs-typology)) and in @Cogne2024.
+We used the typology of AFS described in @Cogne2024, which was developed in the same study area. This typology was based on the one proposed by Nair *et al.* (1993, 2021) and adapted to the local context with semi-structured interviews previously conducted in another study at the same sites [@Cogne2024]. The five AFS identified were as follows: Crop systems including a wooded Fallow phase (CF), Silvopastures (SP), Young Agroforests (YA), Home Gardens (HG), and Forest Gardens (FG). The AFS are presented in more detail in the Supplemental Information (Table S\@ref(tab:afs-typology)) and in @Cogne2024.
 
 Briefly, the CF are plantations of a few non-perennial crops (e.g., maize [*Zea mays*], sweet potatoes [*Ipomoea batatas*], groundnuts [*Arachis hypogaea*], and squash gourd [*Cucurbita moschata*]) which are left fallow after one to three years of cropping. SP are vast areas (generally 200 to 500 ha) where cattle (*Bos taurus*, *Bos domesticus*, *Bubalus bubalis*) are grazed under the shade of palms, like coconut (*Cocos nucifera*), and trees, like tamarind (*Tamarindus indica*) or eucalyptus (*Eucalyptus alba*) and jujube (*Ziziphus sp.*). YA are agricultural plots where farmers plant rows of trees, like teak (*Tectona grandis*) and mahogany (*Swietenia mahagoni*), spaced approximately 5 x 10 m apart, which are generally left to grow to become HG or FG (see Figure S\@ref(fig:seq-diagram)). HG are plots of land located close to houses where crops and livestock (poultry [*Gallus gallus domesticus*], pigs [*Sus domesticus*], cattle, etc.) are kept in the shade of numerous trees, like Breadfruit (*Artocarpus altilis*), candlenut (*Aleurites moluccanus*) and palms, like areca palm (*Areca catechu*), for multiple uses (wood, fruit, fiber, etc.). FG are generally former HG (over 50 years old) which have been abandoned, for example as a result of the war, and are now used mainly for gathering fruits (e.g. mango [*Mangifera indica*]) and non-timber forest products (e.g. candlenut) with limited human influence.
 
-## Field inventories
+## Field inventories {#field-inventories}
 
 We randomly selected three plots from each of the five traditional AFS identified in each of the two sites (30 plots in total; Figure \@ref(fig:map-sites)). Sampling plots were defined as the entire agricultural plot (area between 0.06 and 1.25 ha) for all AFS except SP plots, which were generally much larger than 1 ha. In SP plots, a 1 ha sampling plot was delineated within the agricultural plot. Tree and soil measurements (described below) were carried out between June and August 2021.
 
 Within each sampling plot, all trees with a circumference at breast height (CBH) greater than or equal to 100 cm were identified taxonomically and their CBH and height were measured. Five subplots of 10x10 m (0.01 ha) were established at each corner and in the center of the sampling plot (Figure S\@ref(fig:design)). Within these subplots, all trees with a CBH between 30 and 100 cm were taxonomically identified and their CBH and height were measured. Height measurements were taken with a dendrometer.
 
-Taxonomic identification was carried out using Tetum (a national official language) vernacular names, which were then linked to scientific names using the iNaturalist and Pl\@ntNet applications, Geoffrey Hull’s monograph [@Hull2006], the “Useful tropical plants” database [@Fern2014] as well as the Australian Northern Territory Government's Native Plants Herbarium [@NT2013]. The correspondence between Tetum names and scientific names is provided in the supplemental material (Table S\@ref(tab:tetum-names)).
+Taxonomic identification was carried out using Tetum (a national official language) vernacular names, which were then linked to scientific names using the iNaturalist and Pl\@ntNet applications, Geoffrey Hull’s monograph [@Hull2006], the “Useful tropical plants” database [@Fern2014] as well as the Australian Northern Territory Government's Native Plants Herbarium [@NT2013]. The correspondence between Tetum names and scientific names is provided in the Supplemental Information (Table S\@ref(tab:tetum-names)).
 
-In each of the 30 sample plots, a composite of three samples was taken from three of the five 10 x 10 m subplots (including the plot center and two opposite corners; Figure S\@ref(fig:design)), covering the intra-plot variability and at a minimum distance of 1 m from any tree. Soils were sampled with a soil auger ( Model Bor Tanah - Dormer Standard Soil Auger, Adiguna Karya Persada, Bogor, Indonesia) at 0-10 cm and 20-30 cm depth,. As the length of the head auger (15 cm) was longer than our target soil depths (10 cm), we could not accurately sample the 10-20 cm soil layer. Soils samples were then air-dried and sieved at 2 mm. They underwent standard physical and chemical analyses at Cirad laboratories in Montpellier, France (Table S\@ref(tab:site-soil)). Total carbon content was determined by dry combustion, following the ISO 10694:1995 standard method, and measured with a thermal conductive detector (EA 1112 Elemental Analyser, Thermo Fischer Scientific, Netherlands). Carbonate content was determined with a calcimeter, following the ISO 10693 standard method. Soil organic carbon content was calculated as the difference of the total carbon and the carbonate contents. 
+In each of the 30 sample plots, a composite of three samples was taken from three of the five 10 x 10 m subplots (including the plot center and two opposite corners; Figure S\@ref(fig:design)), covering the intra-plot variability and at a minimum distance of 1 m from any tree. Soils were sampled with a soil auger (Model Bor Tanah - Dormer Standard Soil Auger, Adiguna Karya Persada, Bogor, Indonesia) at 0-10 cm and 20-30 cm depth. As the length of the head auger (15 cm) was longer than our target soil depths (10 cm), we could not accurately sample the 10-20 cm soil layer. Soils samples were then air-dried and sieved at 2 mm. They underwent standard physical and chemical analyses at Cirad laboratories in Montpellier, France (Table S\@ref(tab:site-soil)). Total carbon content was determined by dry combustion, following the ISO 10694:1995 standard method, and measured with a thermal conductive detector (EA 1112 Elemental Analyser, Thermo Fischer Scientific, Netherlands). Carbonate content was determined with a calcimeter, following the ISO 10693 standard method. Soil organic carbon content was calculated as the difference of the total carbon and the carbonate contents. Soil texture (proportion of clay, silt and sand), pH, xxx and CEC were measured as xxx. 
 
 In addition, at one location in the center of the plot, three 250 cm$^3$ soil samples were taken with a soil sampling cylinder (5 cm in height, 7.98 cm inner diameter, and 8.4 cm outer diameter; Eijkelkamp Soil & Water, Giesbeek, Netherlands)  at depths of 2-7 cm, 12-17 cm and 22-27 cm.  These depths were chosen to take account of the height of the cylinder (i.e. 5 cm), the destruction of the soil below the cylinder during its extraction, and to be associated with depths 0-10 cm, 10-20 cm and 20-30 cm, the depths at which the organic carbon content was calculated or estimated. Each sample was dried at 105°C in a classic oven until a stable dry mass was reached and then sieved to 2 mm. The fine fraction (\< 2 mm) was weighed to be used in the SOC stocks calculation (equation \@ref(eq:soc)).
 
@@ -388,10 +398,7 @@ Belowground carbon (BGC) stocks were estimated at tree level using the root-to-s
 ```{r bgc-estimation}
 # root-to-shoot ratio allometry from Ledo et al., 2018
 # use CWD values from Chave et al., 2014
-data_plot[, cwd := terra::extract(terra::rast("data/CWD.tif"), cbind(long, lat))]
-data_sim_agc <- merge(data_sim_agc, data_plot[, c("N_PLOT", "cwd")], by = "N_PLOT")
 
-# add uncertainty on R:S ratio? 
 data_sim_agc[, RS := exp(- 1.2312 - 0.0215 * DIAM_130_CM + 0.0002 * DIAM_130_CM^2 - 0.0007 * cwd)]
 data_sim_agc[, BGC := RS * AGC]
 ```
@@ -468,14 +475,14 @@ SOC stocks (in Mg C ha$^{-1}$) in plot $p$ were calculated as follows:
 SOC_p = \frac{\sum_i Corg_i \cdot (mfine_i \cdot 10^{-6}) \cdot (Splot \cdot \Delta d)}{Vcyl} (\#eq:soc)
 \end{equation}
 
-Where $Corg_i$ is the SOC content at depth i (either 0-10, 10-20 or 20-30 cm) as measured in the laboratory from the soil sampled by the auger and estimated at depth 10-20 cm (see details below); $mfine_i$ is the mass of the fine fraction of the soil in the sampling cylinder at depth i (in g), converted into Mg with a factor of 10$^-6$; $Surf\ =\ 10^8$ is the surface conversion factor from cm$^2$ to ha; $\Delta d$ is the difference in sample depths (= 10 cm) and $Vcyl$ is the volume of the sampling cylinder (250 cm$^3$). This calculation corresponds to the method M4 recommended by @Poeplau2017, which correctly considers the coarse fraction of the soil. We considered that $mfine_i$ at depths of 2-7 cm, 12-17 cm and 22-27 cm was associated with $Corg_i$ at depths of 0-10, 10-20 cm and 20-30 cm, respectively. At depth $i$ = 10-20 cm, where the carbon content was not measured (see “Soil measurements” section), we estimated SOC content as a function of SOC content at 0-10 cm and 20-30 cm, assuming a standard negative exponential model of SOC content decrease with soil depth [@Mishra2009;@Murphy2019]:
+Where $Corg_i$ is the SOC content at depth i (either 0-10, 10-20 or 20-30 cm) as measured in the laboratory from the soil sampled by the auger and estimated at depth 10-20 cm (see details below); $mfine_i$ is the mass of the fine fraction of the soil in the sampling cylinder at depth i (in g), converted into Mg with a factor of 10$^-6$; $Surf\ =\ 10^8$ is the surface conversion factor from cm$^2$ to ha; $\Delta d$ is the difference in sample depths (= 10 cm) and $Vcyl$ is the volume of the sampling cylinder (250 cm$^3$). This calculation corresponds to the method M4 recommended by @Poeplau2017, which correctly considers the coarse fraction of the soil. We considered that $mfine_i$ at depths of 2-7 cm, 12-17 cm and 22-27 cm was associated with $Corg_i$ at depths of 0-10, 10-20 cm and 20-30 cm, respectively. At depth $i$ = 10-20 cm, where the carbon content was not measured (see “Field inventories” section), we estimated SOC content as a function of SOC content at 0-10 cm and 20-30 cm, assuming a standard negative exponential model of SOC content decrease with soil depth [@Mishra2009;@Murphy2019]:
 
 \begin{equation}
 Corg_{10,20}=Corg_{0,10}\cdot\sqrt{\frac{Corg_{20,30}}{Corg_{0,10}}}
 (\#eq:soc)
 \end{equation}
 
-where $Corg_{a,b}$ is the average SOC content between depths a and b (see rationale for equation \@ref(eq:intersoc) in Supplementary Information xx).
+where $Corg_{a,b}$ is the average SOC content between depths a and b (see rationale for equation \@ref(eq:intersoc) in Supplemental Information).
 
 ```{r open-soil-data}
 # open soil lab data
@@ -551,12 +558,12 @@ data_soil_summ <- data_soil |>
 data_soil_summ[, variable := gsub("\n", "", variable)]
 data_soil_summ <- 
   data_soil_summ[, .(value = mean(as.numeric(value), na.rm = TRUE)), .(N_PLOT, variable)] |> 
-  dcast(N_PLOT ~ variable)
-data_soil_summ[, fine_soil := CLAY + `FINE SILT`] 
+  dcast(N_PLOT ~ variable) 
 data_sim <- merge(data_sim, data_soil_summ)  
-# add elevation
-data_sim <- merge(data_sim, data_plot[, c("N_PLOT", "elev")])
+# add mean annual temperature
+data_sim <- merge(data_sim, data_plot[, c("N_PLOT", "temp")])
 ```
+
 
 ## Statistical analysis
 
@@ -568,16 +575,16 @@ The uncertainty on plot-level AGC was calculated with the AGBmonteCarlo function
 
 We then propagated these uncertainties using a Monte Carlo method (1000 iterations). For single plot estimates of carbon stocks, medians and 95% confidence intervals were estimated as quantiles of the results of the 1000 iterations. For multiplot estimates of carbon stocks, values within each grouping factor were additionally bootstrapped before calculating quantiles (median and 95% confidence intervals).
 
-### Model calibration
+### Carbon stocks model
 
-We modelled both AGC and SOC stocks as: 
+To test the relative effect of AFS type, climate and soil on carbon stocks, we modelled both AGC and SOC stocks as: 
 
-$$Y_{i,j,k} = \mu +  \theta \cdot X_i + \alpha_{j} + \beta_{k} + \epsilon_{i}$$
-with $Y_{i,j,k}$ the stocks (either SOC or AGC) of plot $i$ in site $k$ and AFS type $j$
+$$Y_{i,j,k} = \mu +  \sum_{l} \left( \theta_l \cdot X_{l,i} \right) + \alpha_{j} + \beta_{k} + \epsilon_{i}$$
+with $Y_{i,j,k}$ the stocks (either AGC or SOC) of plot $i$ in site $k$ and AFS type $j$.
 
 $\mu$ is the average stocks in our study area.
 
-$\theta$ is the effect of the covariates on $Y$, and $X_i$ are the values of the covariates in plot $i$; they include elevation for AGC stocks [from NASA SRTM; @SRTM2024], or elevation [@SRTM2024], clay + fine soil content (from soil analysis; xxx methods) and AGC stocks for SOC stocks. All covariates were centred and scaled. Elevation was chosen as it was highly correlated (>95%) with both mean annual temperature and precipitation [@Karger2017]: it was thus a good indicator of a climate gradient in our dataset (see Supplementary information section xx). xxx justify these variables in the introduction
+$\theta_l$ is the effect of covariate $l$ on variable $Y$, and $X_{l,i}$ is the value of covariate $l$ in plot $i$. We included the following covariates: elevation [from NASA SRTM; @SRTM2024] to represent the climate gradient in our study area, and clay fraction (as measured in the Cirad laboratories; see “Field inventories” section) to represent the soil gradient in our study area. The rationale for the choice of these variables is given in the Supplemental Information. In addition, we included AGC stock as a covariate in the SOC stock model, as we wanted to quantify its effect on SOC stocks (hypotheses H2a and H2b). Covariates were all centred and scaled. 
 
 $\alpha_{j}$ and $\beta_{k}$ are the random AFS and site effects, respectively distributed as: 
 
@@ -589,19 +596,22 @@ And $\epsilon_{i}$ the random error, distributed as:
 $$\epsilon_{i} \sim \mathcal{N}(0,\sigma^2)$$
 $\sigma$, $\sigma_{\alpha}$, and $\sigma_{\beta}$ are the standard deviation of the random error, the AFS effect and the site effect respectively. 
 
+### Model calibration
+
 Calibration was carried out using an adapted form of the Hamiltonian Monte Carlo using Stan’s programming language [@Carpenter2017]. We used the standard half-normal distribution as the prior for all standard deviation parameters, and the standard normal distribution for all $\theta$ parameters. To propagate uncertainties on the model outputs, we calibrated the model for each of the 1000 iterations and sampled one set of parameter values in the posterior distributions for each iteration.   
 
-```{r}
+```{r stan-model}
 stan_model <- "
 data {
   int<lower=0> N;
   int<lower=1> AF;
   int<lower=1> S;
-  int<lower=1> K;
+  int<lower=1> KA;
+  int<lower=1> KS;
   int<lower=1,upper=AF> afs[N];
   int<lower=1,upper=S> site[N];
-  vector[N] elev;
-  matrix[N,K] covar;
+  matrix[N,KA] covarA;
+  matrix[N,KS] covarS;
   real<lower=0> agc[N];
   real<lower=0> soc[N];
   real<lower=0> soc10[N];
@@ -611,19 +621,19 @@ parameters {
   real mu_a;
   real delta_afs_a[AF];
   real delta_site_a[S];
-  real theta_a;
+  vector[KA] theta_a;
   real<lower=0> sigma_a;
   
   real mu_s;
   real delta_afs_s[AF];
   real delta_site_s[S];
-  vector[K] theta_s;
+  vector[KS] theta_s;
   real<lower=0> sigma_s;
   
   real mu_s10;
   real delta_afs_s10[AF];
   real delta_site_s10[S];
-  vector[K] theta_s10;
+  vector[KS] theta_s10;
   real<lower=0> sigma_s10;
   
   real<lower=0> sigma_site_a;
@@ -642,15 +652,15 @@ model {
   
   // predictions
   for (i in 1:N) {
-    pred_a[i] = mu_a + elev[i] * theta_a + delta_afs_a[afs[i]] + delta_site_a[site[i]];
-    pred_s[i] = mu_s + dot_product(row(covar, i), theta_s) + delta_afs_s[afs[i]] + delta_site_s[site[i]];
-    pred_s10[i] = mu_s10 + dot_product(row(covar, i), theta_s10) + delta_afs_s10[afs[i]] + delta_site_s10[site[i]];
+    pred_a[i] = mu_a + dot_product(row(covarA, i), theta_a) + delta_afs_a[afs[i]] + delta_site_a[site[i]];
+    pred_s[i] = mu_s + dot_product(row(covarS, i), theta_s) + delta_afs_s[afs[i]] + delta_site_s[site[i]];
+    pred_s10[i] = mu_s10 + dot_product(row(covarS, i), theta_s10) + delta_afs_s10[afs[i]] + delta_site_s10[site[i]];
   }
   
   // likelihoods
   agc ~ normal(pred_a, sigma_a);
   soc ~ normal(pred_s, sigma_s);
-  soc10 ~ normal(pred_s10, sigma_s);
+  soc10 ~ normal(pred_s10, sigma_s10);
   
   // random effects
   delta_afs_a ~ normal(0, sigma_afs_a);
@@ -661,15 +671,16 @@ model {
   delta_site_a ~ normal(0, sigma_site_a);
   
   //  priors
-  theta_s ~ normal(0,1);
-  theta_s10 ~ normal(0,1);
+  theta_a ~ normal(0,1);
   sigma_a ~ normal(0,1);
-  sigma_s ~ normal(0,1);
-  sigma_s10 ~ normal(0,1);
   sigma_site_a ~ normal(0,1);
   sigma_afs_a ~ normal(0,1);
+  theta_s ~ normal(0,1);
+  sigma_s ~ normal(0,1);
   sigma_site_s ~ normal(0,1);
   sigma_afs_s ~ normal(0,1);
+  theta_s10 ~ normal(0,1);
+  sigma_s10 ~ normal(0,1);
   sigma_site_s10 ~ normal(0,1);
   sigma_afs_s10 ~ normal(0,1);
 }
@@ -677,7 +688,7 @@ model {
 "
 ```
 
-```{r stan}
+```{r stan-calibration}
 if (!dir.exists("outputs")) dir.create("outputs")
 
 if (!file.exists("outputs/data_par.csv")) {
@@ -693,17 +704,18 @@ if (!file.exists("outputs/data_par.csv")) {
       
       data_stan <- data_sim |> 
         subset(iter==i) |> 
-        dcast(N_PLOT + site + ID_AF + fine_soil + elev ~ variable) |> 
+        dcast(N_PLOT + site + ID_AF + CLAY + temp ~ variable) |> 
         with(
           list(
             N = length(N_PLOT),
             AF = length(unique(ID_AF)),
             S = length(unique(site)),
-            K = 3,
+            KA = 2,
+            KS = 3,
             afs = as.numeric(as.factor(ID_AF)), 
             site = as.numeric(as.factor(site)),
-            elev = (elev-mean(elev))/sd(elev),
-            covar = scale(cbind(elev, fine_soil, AGC)),
+            covarA = scale(cbind(temp, CLAY)),
+            covarS = scale(cbind(temp, CLAY, AGC)),
             agc = AGC,
             soc = SOC,
             soc10 = SOC10
@@ -752,8 +764,7 @@ data_par[effect == "afs" & !is.na(level_num),
 data_par[effect == "site" & !is.na(level_num),
          level := levels(as.factor(data_sim$site))[level_num]]
 data_par[param == "theta",
-         level := c("elev", "fine", "agc")[level_num]]
-data_par[param == "theta" & stock == "agc", level := "elev"]
+         level := c("mat", "clay", "agc")[level_num]]
 
 # get levels of "delta" parameters
 df_mu_delta <- 
@@ -824,17 +835,23 @@ dataC_afs_site = data_sim[, .(
 
 # Results
 
+## Distribution of carbon stocks by AFS and site
+
 AGC stocks ranged between `r dataC_plot[variable=="AGC", round(min(mean))]` and `r dataC_plot[variable=="AGC", round(max(mean))]` Mg C ha$^{-1}$, with an average of `r dataC_plot[variable=="AGC", round(mean(mean))]` Mg C ha$^{-1}$ and a coefficient of variation of `r dataC_plot[variable=="AGC", round(sd(mean)/mean(mean)*100)]`% (Table \@ref(tab:summary); Figure \@ref(fig:barplot)). AGC stocks varied substantially between AFS, but not between sites (Figure \@ref(fig:effect-afs-site)). The AFS with the lowest AGC stocks were the `r dataC_afs[variable=="AGC", afs[which.min(mean)]]` with an average of `r dataC_afs[variable=="AGC", round(mean[which.min(mean)])]` Mg C ha$^{-1}$; the AFS with the highest AGC stocks were the `r dataC_afs[variable=="AGC", afs[which.max(mean)]]` with an average of `r dataC_afs[variable=="AGC", round(mean[which.max(mean)])]` Mg C ha$^{-1}$ (Table \@ref(tab:summary); Figure \@ref(fig:barplot)).
 
 SOC stocks varied between `r dataC_plot[variable=="SOC", round(min(mean))]` and `r dataC_plot[variable=="SOC", round(max(mean))]` Mg C ha$^{-1}$, with an average of `r dataC_plot[variable=="SOC", round(mean(mean))]` Mg C ha$^{-1}$ and a coefficient of variation of `r dataC_plot[variable=="SOC", round(sd(mean)/mean(mean)*100)]`% (Table \@ref(tab:summary); Figure \@ref(fig:barplot)). SOC stocks varied substantially between sites, but not between AFS (Figure \@ref(fig:effect-afs-site)). The SOC stocks in Gariuai were on average higher (`r dataC_site[site=="Gariuai" & variable=="SOC", round(mean)]` Mg C ha$^{-1}$) than those in Osso-Luga (`r dataC_site[site=="Osso-Luga" & variable=="SOC", round(mean)]` Mg C ha$^{-1}$; Figure \@ref(fig:barplot)).
 
 Total carbon stocks ranged between `r dataC_plot[variable=="TOT", round(min(mean))]` and `r dataC_plot[variable=="TOT", round(max(mean))]` Mg C ha$^{-1}$, with an average of `r dataC_plot[variable=="TOT", round(mean(mean))]` Mg C ha$^{-1}$ and a coefficient of variation of `r dataC_plot[variable=="TOT", round(sd(mean)/mean(mean)*100)]`% (Table \@ref(tab:summary); Figure \@ref(fig:barplot)). The AFS with the lowest total carbon stocks were the `r dataC_afs[variable=="TOT", afs[which.min(mean)]]` with an average of `r dataC_afs[variable=="TOT", round(mean[which.min(mean)])]` Mg C ha$^{-1}$; the AFS with the highest total carbon stocks were the `r dataC_afs[variable=="TOT", afs[which.max(mean)]]` with an average of `r dataC_afs[variable=="TOT", round(mean[which.max(mean)])]` Mg C ha$^{-1}$ (Table \@ref(tab:summary); Figure \@ref(fig:barplot)).
 
-## Effect of elevation and fine soil on AGC and SOC stocks
+## Effect of mean annual temperature and clay fraction on AGC and SOC stocks
+
+Zero was included in the 80% credibility intervals for the effect of mean annual temperature and clay fraction on AGC, meaning that no strong effect was detected in our data (Figure \@ref(fig:effect-agc-clay)). Similarly, the clay fraction did not show a strong effect on SOC stocks, as zero was included in its 80% credible intervals (Figure \@ref(fig:effect-agc-clay)). 
+
+Mean annual temperature, on the contrary, had a stronger negative effect on SOC stocks at both 0-10 cm and 0-30 cm depth (Figure \@ref(fig:effect-agc-clay)). Values of $\theta_{MAT}$ were negative in `r sum(subset(data_par, stock=="soc" & param == "theta" & level == "mat")$value<0)/10`% of cases for SOC at 0-30 cm depth, and in `r sum(subset(data_par, stock=="soc10" & param == "theta" & level == "mat")$value<0)/10`% of cases for SOC at 0-10 cm depth. They averaged `r round(mean(subset(data_par, stock=="soc" & param == "theta" & level == "mat")$value), 2)` at 0-30 cm depth, meaning that SOC stocks were estimated to decrease by `r abs(round(mean(subset(data_par, stock=="soc" & param == "theta" & level == "mat")$value), 2))` Mg C ha$^{-1}$ for an increase in mean annual temperature of one standard deviation, i.e. `r round(sd(data_plot$temp), 2)` °C. 
 
 ## Relationship between AGC and SOC stocks
 
-The effect of AGC on SOC was close to zero (Figure \@ref(fig:plot-reg)). 
+The relationship between AGC and SOC stocks was weak in our dataset (Figure  \@ref(fig:plot-reg)), as the 80% credibility interval of the associated parameter ($\theta_{AGC}$) included zero (Figure \@ref(fig:effect-agc-clay)). 
 
 # Discussion
 
@@ -1025,7 +1042,7 @@ ggplot(dataC_afs_site[variable %in% c("AGC", "BGC", "SOC")],
 
 </br>
 
-```{r fig.id = "effect-afs-site", fig.width = 7, fig.height = 3}
+```{r fig.id = "effect-afs-site", fig.width = 7, fig.height = 3, fig.cap = "Effect of AFS (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden) and site on carbon stocks (in MgC/ha). These values were obtained as the sum of the mean predicted stocks ($\\mu$) and the AFS or site random effects. The black dot represents the mean of the 1000 iterations; the red segment represents the 80% confidence interval and the black segment represents the 95% confidence interval. AGC: aboveground (biomass) carbon; SOC: soil organic carbon."}
 labels_stock = function(x) paste(toupper(x), "(Mg/ha)")
 labels_effect = function(x) ifelse(x %in% c("afs", "agc"), toupper(x), x)
 
@@ -1042,23 +1059,24 @@ pars_summary |>
   theme_bw()
 ```
 
-```{r fig.id = "effect-agc-clay", fig.width = 7, fig.height = 2}
-labels_level = function(x)
-  ifelse(x=="agc", "AGC", ifelse(x == "elev", "Elevation", "Clay + fine silt"))
+```{r fig.id = "effect-agc-clay", fig.width = 7, fig.height = 2, fig.cap = "Effect of covariates (MAT: mean annual temperature, Clay: clay fraction, AGC: aboveground carbon) on carbon stocks (SOC: soil organic carbon, at 0-10 cm or 0-30 cm depth). Covariates are all centred and scaled; positive values indicate that C stocks tend to be higher for higher values of the covariate. Black dots represent the mean of the 1000 iterations; red segments represent 80% confidence intervals and black segments represent 95% confidence intervals."}
+labels_stock = function(x)
+  ifelse(x=="agc", "AGC", ifelse(grepl("10", x), "SOC (0-10 cm)", "SOC (0-30 cm)"))
+
 pars_summary |> 
   subset(param == "theta")  |> 
-  ggplot(aes(y = ifelse(stock=="soc10", "SOC : 0-10 cm", 
-                        ifelse(stock == "soc", "SOC : 0-30 cm", "AGC")))) + 
+  ggplot(aes(y = level)) + 
   geom_vline(xintercept = 0, lty = 2) +
   geom_segment(aes(x = low95, xend = upp95)) + 
   geom_segment(aes(x = low80, xend = upp80), col = 2, lwd = 3) + 
   geom_point(aes(x = mean), size = 2) +
-  facet_wrap(~level, labeller = labeller(level = labels_level)) + 
-  labs(x="Effect on SOC", y = NULL) +
+  facet_wrap(~stock, labeller = labeller(stock = labels_stock)) + 
+  labs(x="Effect of covariates on C stocks", y = NULL) +
+  scale_y_discrete(labels= c("AGC", "Clay", "MAT")) +
   theme_bw()
 ```
 
-```{r fig.id = "plot-reg", fig.height = 3.5, fig.width = 7, fig.cap = "Scatter plot of aboveground carbon (AGC; x-axis) and soil organic carbon (SOC; y-axis) stocks. SOC stocks were estimated at the topsoil layer (0-10 cm; left panel) and at the total measured depth (0-30 cm; right panel). Each point represents the median C stock value in a sample plot, and the vertical and horizontal error bars are the 95% confidence interval. The colors correspond to the different agroforestry systems (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden); the different shapes represent the two sites. The dotted lines represent the (non-significant) linear mixed models between log-transformed AGC and SOC stocks. For each linear mixed model, we report the marginal R^2^ (proportion of variance explained by fixed effects only) and the conditional R^2^ (proportion of variance explained by both fixed and random effects). Both x- and y-axes are log-transformed. One plot (AFS: CF, site: Gariuai) with no trees over 30 cm in circumference at breast height (minimum size for measurement) had AGC stocks estimated at 0 Mg C ha^-1^ and was therefore removed from the linear model and the figure."}
+```{r fig.id = "plot-reg", fig.height = 3.5, fig.width = 7, fig.cap = "Scatter plot of aboveground carbon (AGC; x-axis) and soil organic carbon (SOC; y-axis) stocks. SOC stocks were estimated at the topsoil layer (0-10 cm; left panel) and at the total measured depth (0-30 cm; right panel). Each point represents the mean SOC stocks in a sample plot, and the vertical and horizontal error bars are the 95% confidence intervals. The colours correspond to the different agroforestry systems (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden); the different shapes represent the two sites. The dotted lines represent the mean predicted SOC stocks for a given AGC stock value, and the grey areas represent the 95% confidence interval of this prediction."}
 
 dfpred <- expand.grid(agc = seq(0, 170, length.out = 20), 
                       iter = unique(data_par$iter)
@@ -1114,9 +1132,9 @@ ggplot(dataC_fig, aes(color = afs)) +
 ::: {#refs}
 :::
 
-# Supplementary information
+# Supplemental Information
 
-## Supplementary methods
+## Supplemental methods
 
 ### Calculation of 10-20 cm average carbon content
 
@@ -1143,6 +1161,37 @@ $$\frac{C_{20,30}}{C_{0,10}} = \frac{\frac{C_0}{10\lambda} exp(-20\lambda)\left(
 $$ \frac{C_{10,20}}{C_{0,10}} = exp(-10\lambda) $$ $$\Rightarrow C_{10,20} = C_{0,10} \cdot exp(-10 \cdot \frac{log(\frac{C_{0,10}}{C_{20,30}})}{20})$$
 
 $$ \Rightarrow C_{10,20} = C_{0,10} \cdot \left( \frac{C_{20,30}}{C_{0,10}}\right)^{\frac{1}{2}}$$
+### Choice of climate and soil covariates
+
+As described in the "Carbon stocks model" section of the Materials and Methods, we hypothesized that C stocks (both AGC and SOC) are affected by climate and soil characteristics, together with land use (in this case, AFS type) and other spatial differences (in our case, a site effect). 
+
+```{r pca-clim-soil}
+pca_clim <- data_plot[, c("temp", "prec", "varp")] |> 
+  scale() |> princomp()
+
+data_soil_melt <- 
+  data_soil |> 
+  melt(id.vars = c("N_PLOT", "SAMPLE_DEPTH"), 
+       measure.vars = c(
+         "pH\n", "CEC\n",  "CLAY", "FINE SILT", 
+         "COARSE SILT", "FINE SAND", "COARSE SAND"))
+
+# make values numeric; when detectability limit is reached, used limit value
+data_soil_melt[grepl("LD", value), value := gsub(",", ".", tstrsplit(value, "LD=")[[2]])]
+
+data_soil_melt <- 
+  data_soil_melt[, .(value = mean(as.numeric(value), na.rm = TRUE)), .(N_PLOT, variable)] |> 
+  dcast(N_PLOT ~ variable) 
+data_soil_melt[, silt := `COARSE SILT` +`FINE SILT`]
+data_soil_melt[, sand := `FINE SAND` + `COARSE SAND`]
+
+pca_soil <- data_soil_melt[, c("pH\n", "CEC\n",  "CLAY", "silt", "sand")] |> 
+  scale() |> princomp()
+```
+
+We selected the following set of variables to represent the effect of climate: mean annual temperature (BIO1), mean annual precipitation (BIO12), annual precipitation variability (BIO15) over the period 1981-2010. These bioclimatic variables were extracted from CHELSA 2.1 [@Krager2017]. These variables were all highly correlated in our dataset (Figure S\@ref(fig:choice-clim-vars)a). We performed a principal component analysis after scaling and centering these three variables: the first axis explained `r round(pca_clim$sdev[1]^2/sum(pca_clim$sdev^2)*100)`% of the variance in our dataset (Figure S\@ref(fig:choice-clim-vars)b). We therefore decided to keep only one variable to represent this climatic gradient: mean annual temperature, which was most correlated with the first axis of the PCA (Figure S\@ref(fig:choice-clim-vars)b), and has been shown to influence C stocks in other contexts [@Wiesmeier2019;@Muller-Landau2021]. 
+
+We selected the following set of variables to represent the effect of soil properties on C stocks: clay fraction (<2 $\mu$m), silt fraction (2-50 $\mu$m), sand fraction (50-2000 $\mu$m), pH and cation exchange capacity xx. These edaphic variables were measured on our soil samples analysed in the Cirad laboratories (see section "Field inventories"). After scaling and centering these variables, we performed a principal component analysis: the first axis explained `r round(pca_soil$sdev[1]^2/sum(pca_soil$sdev^2)*100)`% of the variance in our data set (Figure S\@ref(fig:choice-soil-vars)b). We therefore decided to retain only one variable to represent this edaphic gradient: clay fraction, which was one of the most highly correlated with the first axis of the PCA (Figure S\@ref(fig:choice-soil-vars)b) and has been shown to influence C stocks in other contexts [@Wiesmeier2019]. 
 
 \## Tables
 
@@ -1289,49 +1338,6 @@ flextable(vern) |>
 
 \## Figures
 
-```{r dag, fig.cap="Direct acyclic plot of the hypothesised effect of fine soil (clay + fine silt content), climate (through elevation) and land use (here AFS) on AGC and SOC stocks."}
-# save_png <- function(plot, path){
-#   DiagrammeRsvg::export_svg(plot) %>%
-#     charToRaw() %>%
-#     rsvg::rsvg() %>%
-#     png::writePNG(path)
-# }
-# 
-# DiagrammeR::grViz("
-#       digraph {
-#       graph [layout = dot, rankdir = LR]
-# 
-#       node [shape = ellipse]
-#       AGC;
-#       SOC;
-#       node [shape = rectangle]
-#       elevation;
-#       climate;
-#       clay;
-#       AFS;
-# 
-#       # Connect nodes with edges and labels
-#       AFS -> AGC;
-#       climate -> AGC;
-#       AFS -> SOC;
-#       clay -> SOC;
-#       elevation -> climate;
-#       climate -> SOC;
-#       edge[style = 'dashed']
-#       AGC -> SOC;
-#        }
-# 
-#       ") %>%
-#   save_png("figures/dag.png")
-include_graphics("figures/dag.png") 
-```
-
-```{r fig.id="design", fig.cap = "Plot sampling design. (a) Typical plot < 1 ha, in all AFS except SPs. (b) Typical 1-ha plot in SPs. Red areas are the five 10x10 m subplots, and blue dots are the three soil sampling locations.", fig.autonum.start_at=1, fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 5, fig.height = 3}
-include_graphics("figures/plot-design.jpg") 
-```
-
-</br>
-
 ```{r fig.id="seq-diagram", fig.cap = "Typical sequence of AFS in the sites included in this study. Transitions between two systems are represented by arrows: dashed arrows represent transitions that usually include tree removal, whereas solid arrows represent transitions where trees are planted and/or the AFS is left to regenerate naturally. These transitions may vary according to the farmer's strategy and available resources (Cogné and Lescuyer, 2024).", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 8, fig.height = 2.2, out.width="50%"}
 # save_png <- function(plot, path){
 #   DiagrammeRsvg::export_svg(plot) %>%
@@ -1369,75 +1375,180 @@ include_graphics("figures/plot-design.jpg")
 include_graphics("figures/seq_diagram.png") 
 ```
 
+```{r fig.id="design", fig.cap = "Plot sampling design. (a) Typical plot < 1 ha, in all AFS except SPs. (b) Typical 1-ha plot in SPs. Red areas are the five 10x10 m subplots, and blue dots are the three soil sampling locations.", fig.autonum.start_at=1, fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 5, fig.height = 3}
+include_graphics("figures/plot-design.jpg") 
+```
+
+<!-- </br> -->
+
+<!-- ```{r fig.id="altitude-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap = "Effect of plot elevation (x-axis; in m) on SOC stocks (y-axis; in\ Mg\ C\ ha^-1^). Points are colored by site; the point corresponds to the mean prediction at that site, while the error bars correspond to the 95% confidence interval. We performed a linear mixed effects regression with log-transformed SOC stocks as the dependent variable, log-transformed elevation as the independent variable, and site as random effect. Results are presented as regression lines and the p-value of the relationship between SOC stocks and elevation.", fig.cap.pre="Figure S"} -->
+<!-- dataC_plot <- read.csv("dataC_plot.csv") |> setDT() -->
+<!-- dataCelev <- merge(dataC_plot[variable=="SOC", c("plot", "site", "mean", "upr", "lwr")],  -->
+<!--                    data_plot[, c("N_PLOT", "long", "lat")], by.x = "plot", by.y = "N_PLOT") -->
+
+<!-- # extract elevation -->
+<!-- dataCelev[, elev := terra::extract( -->
+<!--   terra::rast("data/srtm_62_14.tif"),  -->
+<!--   cbind(long, lat) -->
+<!-- )] -->
+
+<!-- regElev = lmer(log(mean) ~ log(elev) + (1|site), data = dataCelev) |>  -->
+<!--   summary() -->
+<!-- pvalueE = signif(regElev$coefficients[2, 5], 2) -->
+<!-- slp = regElev$coefficients[2, 1] -->
+
+<!-- dfElev = dataCelev[, .( -->
+<!--   int = mean(log(mean)) - slp * mean(log(elev)),  -->
+<!--   elev = min(elev), elevMax = max(elev), -->
+<!--   slp = slp), .(site)]  -->
+<!-- dfElev[, mean := exp(slp*log(elev) + int)] -->
+<!-- dfElev[, predMax := exp(slp*log(elevMax) + int)] -->
+
+
+<!-- ggplot(dataCelev, aes(x = elev, y = mean, col = site)) + -->
+<!--   geom_pointrange(aes(ymin=lwr, ymax = upr)) +  -->
+<!--   geom_segment(data = dfElev, aes(xend = elevMax, yend = predMax)) + -->
+<!--   theme_classic() + -->
+<!--   annotate(geom = "text", label = paste("p-value =", pvalueE), x = 500, y = 32) + -->
+<!--   labs(x = "Elevation (m)", y = expression("SOC stocks (Mg C"*" "*ha^{-1}*")"), col = "Site") + -->
+<!--   scale_x_log10() + scale_y_log10() -->
+<!-- ``` -->
+
+<!-- </br> -->
+
+<!-- ```{r fig.id = "clay-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap="Distribution of SOC content (y-axis; in %) values as a function of fine silt and clay content (x-axis; in %), soil depth (point color; in cm), and site (point shape). We performed a linear mixed effects regression with log-transformed SOC content as the dependent variable, log-transformed fine soil texture as the independent variable, and soil depth and site as random effects. Results are presented as regression lines and the p-value of the relationship between SOC content and fine soil texture.", fig.cap.pre="Figure S"} -->
+<!-- data_soil[, site := substr(ID_VILLAGE, 1, 1)] -->
+<!-- data_soil[site == "S", site := "Osso-Luga"] -->
+<!-- data_soil[site == "G", site := "Gariuai"] -->
+
+<!-- regText = lmer( -->
+<!--   log(Corg) ~ log(as.numeric(CLAY) + as.numeric(`FINE SILT`)) +  -->
+<!--     (1|site)+  -->
+<!--     (1|SAMPLE_DEPTH),  -->
+<!--   data = data_soil[SAMPLE_DEPTH != "10-20"]) |>  -->
+<!--   summary() -->
+<!-- pvalueT = signif(regText$coefficients[2, 5], 3) -->
+<!-- slp = regText$coefficients[2, 1] -->
+
+<!-- dfText = data_soil[SAMPLE_DEPTH != "10-20" & !is.na(CLAY), .( -->
+<!--   int = mean(log(Corg)) - slp * mean(log(as.numeric(CLAY) + as.numeric(`FINE SILT`))),  -->
+<!--   xmin = min(as.numeric(CLAY) + as.numeric(`FINE SILT`)),  -->
+<!--   xmax = max(as.numeric(CLAY) + as.numeric(`FINE SILT`)), -->
+<!--   slp = slp), .(site, SAMPLE_DEPTH)]  -->
+<!-- dfText[, predMin := exp(slp*log(xmin) + int)] -->
+<!-- dfText[, predMax := exp(slp*log(xmax) + int)] -->
+
+<!-- ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY) + as.numeric(`FINE SILT`), y = Corg, shape = SAMPLE_DEPTH, col = site)) + -->
+<!--   geom_point() + -->
+<!--   geom_segment(data = dfText, aes(x = xmin, y = predMin, xend = xmax, yend = predMax, lty = SAMPLE_DEPTH)) + -->
+<!--   scale_x_log10() + scale_y_log10() + -->
+<!--   scale_linetype_manual(values=c("twodash", "dotted")) + -->
+<!--   labs(shape = "Soil depth (cm)", lty = "Soil depth (cm)",  -->
+<!--        x = "Clay and fine silt content (%)",  -->
+<!--        y = "SOC content (%)",  -->
+<!--        col = "Site") + -->
+<!--   annotate(geom = "text", label = paste("p-value =", pvalueT), x = 45, y = 1) + -->
+<!--   theme_classic() -->
+<!-- ``` -->
+
 </br>
 
-```{r fig.id="altitude-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap = "Effect of plot elevation (x-axis; in m) on SOC stocks (y-axis; in\ Mg\ C\ ha^-1^). Points are colored by site; the point corresponds to the mean prediction at that site, while the error bars correspond to the 95% confidence interval. We performed a linear mixed effects regression with log-transformed SOC stocks as the dependent variable, log-transformed elevation as the independent variable, and site as random effect. Results are presented as regression lines and the p-value of the relationship between SOC stocks and elevation.", fig.cap.pre="Figure S"}
-dataC_plot <- read.csv("dataC_plot.csv") |> setDT()
-dataCelev <- merge(dataC_plot[variable=="SOC", c("plot", "site", "mean", "upr", "lwr")], 
-                   data_plot[, c("N_PLOT", "long", "lat")], by.x = "plot", by.y = "N_PLOT")
-
-# extract elevation
-dataCelev[, elev := terra::extract(
-  terra::rast("data/srtm_62_14.tif"), 
-  cbind(long, lat)
-)]
-
-regElev = lmer(log(mean) ~ log(elev) + (1|site), data = dataCelev) |> 
-  summary()
-pvalueE = signif(regElev$coefficients[2, 5], 2)
-slp = regElev$coefficients[2, 1]
-
-dfElev = dataCelev[, .(
-  int = mean(log(mean)) - slp * mean(log(elev)), 
-  elev = min(elev), elevMax = max(elev),
-  slp = slp), .(site)] 
-dfElev[, mean := exp(slp*log(elev) + int)]
-dfElev[, predMax := exp(slp*log(elevMax) + int)]
-
-
-ggplot(dataCelev, aes(x = elev, y = mean, col = site)) +
-  geom_pointrange(aes(ymin=lwr, ymax = upr)) + 
-  geom_segment(data = dfElev, aes(xend = elevMax, yend = predMax)) +
-  theme_classic() +
-  annotate(geom = "text", label = paste("p-value =", pvalueE), x = 500, y = 32) +
-  labs(x = "Elevation (m)", y = expression("SOC stocks (Mg C"*" "*ha^{-1}*")"), col = "Site") +
-  scale_x_log10() + scale_y_log10()
+```{r fig.id = "dag", fig.cap="Direct acyclic plot of the hypothesised effect of soil characteristics, climate and land use (here AFS) on AGC and SOC stocks."}
+# save_png <- function(plot, path){
+#   DiagrammeRsvg::export_svg(plot) %>%
+#     charToRaw() %>%
+#     rsvg::rsvg() %>%
+#     png::writePNG(path)
+# }
+# 
+# DiagrammeR::grViz("
+#       digraph {
+#       graph [layout = dot, rankdir = LR]
+# 
+#       node [shape = ellipse]
+#       AGC;
+#       SOC;
+#       node [shape = rectangle]
+#       climate;
+#       soil;
+#       AFS;
+# 
+#       # Connect nodes with edges and labels
+#       AFS -> AGC;
+#       climate -> AGC;
+#       AFS -> SOC;
+#       soil -> AGC;
+#       soil -> SOC;
+#       climate -> SOC;
+#       edge[style = 'dashed']
+#       AGC -> SOC;
+#        }
+# 
+#       ") %>%
+#   save_png("figures/dag.png")
+include_graphics("figures/dag.png") 
 ```
 
 </br>
 
-```{r fig.id = "clay-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap="Distribution of SOC content (y-axis; in %) values as a function of fine silt and clay content (x-axis; in %), soil depth (point color; in cm), and site (point shape). We performed a linear mixed effects regression with log-transformed SOC content as the dependent variable, log-transformed fine soil texture as the independent variable, and soil depth and site as random effects. Results are presented as regression lines and the p-value of the relationship between SOC content and fine soil texture.", fig.cap.pre="Figure S"}
-data_soil[, site := substr(ID_VILLAGE, 1, 1)]
-data_soil[site == "S", site := "Osso-Luga"]
-data_soil[site == "G", site := "Gariuai"]
+```{r fig.id="choice-clim-vars", fig.width = 10, fig.height=4, fig.cap=""}
+g1 <- data_plot[, c("temp", "prec", "varp")] |>
+  setnames(c("MAT", "MAP", "Pvar")) |>
+  cor() |> melt() |>
+  ggplot(aes(x = Var1, y = Var2, label = round(value, 2), fill = value)) +
+  geom_tile() +
+  geom_text() +
+  scale_fill_gradientn(colours = c("brown1", "#FFFFFF", "cornflowerblue")) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = "Pearson\nCorrelation\nCoefficient")
 
-regText = lmer(
-  log(Corg) ~ log(as.numeric(CLAY) + as.numeric(`FINE SILT`)) + 
-    (1|site)+ 
-    (1|SAMPLE_DEPTH), 
-  data = data_soil[SAMPLE_DEPTH != "10-20"]) |> 
-  summary()
-pvalueT = signif(regText$coefficients[2, 5], 3)
-slp = regText$coefficients[2, 1]
-
-dfText = data_soil[SAMPLE_DEPTH != "10-20" & !is.na(CLAY), .(
-  int = mean(log(Corg)) - slp * mean(log(as.numeric(CLAY) + as.numeric(`FINE SILT`))), 
-  xmin = min(as.numeric(CLAY) + as.numeric(`FINE SILT`)), 
-  xmax = max(as.numeric(CLAY) + as.numeric(`FINE SILT`)),
-  slp = slp), .(site, SAMPLE_DEPTH)] 
-dfText[, predMin := exp(slp*log(xmin) + int)]
-dfText[, predMax := exp(slp*log(xmax) + int)]
-
-ggplot(data_soil[SAMPLE_DEPTH != "10-20"], aes(x = as.numeric(CLAY) + as.numeric(`FINE SILT`), y = Corg, shape = SAMPLE_DEPTH, col = site)) +
-  geom_point() +
-  geom_segment(data = dfText, aes(x = xmin, y = predMin, xend = xmax, yend = predMax, lty = SAMPLE_DEPTH)) +
-  scale_x_log10() + scale_y_log10() +
-  scale_linetype_manual(values=c("twodash", "dotted")) +
-  labs(shape = "Soil depth (cm)", lty = "Soil depth (cm)", 
-       x = "Clay and fine silt content (%)", 
-       y = "SOC content (%)", 
-       col = "Site") +
-  annotate(geom = "text", label = paste("p-value =", pvalueT), x = 45, y = 1) +
+g2 <- data_plot[, c("temp", "prec", "varp")] |>
+  setnames(c("MAT", "MAP", "Pvar")) |>
+  scale() |>
+  princomp() |>
+  autoplot(data = data_plot, colour = 'site', loadings.colour = 'black',
+         loadings.label = TRUE, loadings.label.col = 'black') +
   theme_classic()
+ggpubr::ggarrange(g1, g2, labels = "auto")
 ```
 
+
+```{r fig.id = "choice-soil-vars", fig.width = 10, fig.height=4}
+g1 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n", "CEC\n")] |>
+  setnames(c("clay", "silt", "sand", "pH", "CEC")) |>
+  cor() |> melt() |>
+  ggplot(aes(x = Var1, y = Var2, label = round(value, 2), fill = value)) +
+  geom_tile() +
+  geom_text() +
+  scale_fill_gradientn(colours = c("brown1", "#FFFFFF", "cornflowerblue")) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = "Pearson\nCorrelation\nCoefficient")
+
+g2 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n", "CEC\n")] |>
+  setnames(c("clay", "silt", "sand", "pH", "CEC")) |>
+  scale() |>
+  princomp() |>
+  autoplot(data = data_plot, colour = 'site', loadings.colour = 'black',
+         loadings.label = TRUE, loadings.label.col = 'black') +
+  theme_classic()
+ggpubr::ggarrange(g1, g2, labels = "auto")
+```
+
+
+<!-- ```{r dag-code} -->
+<!-- # dag { -->
+<!-- # bb="-2.799,-2.922,2.216,3.074" -->
+<!-- # afs [exposure,pos="0.265,-1.155"] -->
+<!-- # agc [exposure,pos="-0.591,0.840"] -->
+<!-- # climate [adjusted,pos="-1.049,-1.155"] -->
+<!-- # soc [outcome,pos="0.137,1.233"] -->
+<!-- # soil [adjusted,pos="-0.426,-1.182"] -->
+<!-- # afs -> agc -->
+<!-- # afs -> soc -->
+<!-- # agc -> soc -->
+<!-- # climate -> agc -->
+<!-- # climate -> soc -->
+<!-- # soil -> agc -->
+<!-- # soil -> soc -->
+<!-- # } -->
+<!-- ``` -->
