@@ -42,8 +42,9 @@ packages_needed = c(
   "ggplot2",      # version 3.4.4
   "ggrepel",      # version 0.9.4
   "ggspatial",    # version 1.1.9
-  "maps",         # version 3.4.2
   "ggpubr",       # version 0.6.0
+  "ggfortify",    # version 0.4.17
+  "maps",         # version 3.4.2
   "rdryad",       # version 1.0.0
   "readxl",       # version 1.4.3
   "data.table",   # version 1.14.8
@@ -1189,9 +1190,9 @@ pca_soil <- data_soil_melt[, c("pH\n", "CEC\n",  "CLAY", "silt", "sand")] |>
   scale() |> princomp()
 ```
 
-We selected the following set of variables to represent the effect of climate: mean annual temperature (BIO1), mean annual precipitation (BIO12), annual precipitation variability (BIO15) over the period 1981-2010. These bioclimatic variables were extracted from CHELSA 2.1 [@Krager2017]. These variables were all highly correlated in our dataset (Figure S\@ref(fig:choice-clim-vars)a). We performed a principal component analysis after scaling and centering these three variables: the first axis explained `r round(pca_clim$sdev[1]^2/sum(pca_clim$sdev^2)*100)`% of the variance in our dataset (Figure S\@ref(fig:choice-clim-vars)b). We therefore decided to keep only one variable to represent this climatic gradient: mean annual temperature, which was most correlated with the first axis of the PCA (Figure S\@ref(fig:choice-clim-vars)b), and has been shown to influence C stocks in other contexts [@Wiesmeier2019;@Muller-Landau2021]. 
+We selected the following set of variables to represent the effect of climate: mean annual temperature (BIO1), mean annual precipitation (BIO12), annual precipitation variability (BIO15) over the period 1981-2010. These bioclimatic variables were extracted from CHELSA V2.1 [@Krager2017]. These variables were all highly correlated in our dataset (Figure S\@ref(fig:choice-clim-vars)a). We performed a principal component analysis after scaling and centering these three variables: the first component explained `r round(pca_clim$sdev[1]^2/sum(pca_clim$sdev^2)*100)`% of the variance in our dataset (Figure S\@ref(fig:choice-clim-vars)b). We therefore decided to keep only one variable to represent this climatic gradient: mean annual temperature, which was most correlated with the first component of the PCA (Figure S\@ref(fig:choice-clim-vars)b), and has been shown to influence C stocks in other contexts [@Wiesmeier2019;@Muller-Landau2021]. 
 
-We selected the following set of variables to represent the effect of soil properties on C stocks: clay fraction (<2 $\mu$m), silt fraction (2-50 $\mu$m), sand fraction (50-2000 $\mu$m), pH and cation exchange capacity xx. These edaphic variables were measured on our soil samples analysed in the Cirad laboratories (see section "Field inventories"). After scaling and centering these variables, we performed a principal component analysis: the first axis explained `r round(pca_soil$sdev[1]^2/sum(pca_soil$sdev^2)*100)`% of the variance in our data set (Figure S\@ref(fig:choice-soil-vars)b). We therefore decided to retain only one variable to represent this edaphic gradient: clay fraction, which was one of the most highly correlated with the first axis of the PCA (Figure S\@ref(fig:choice-soil-vars)b) and has been shown to influence C stocks in other contexts [@Wiesmeier2019]. 
+We selected the following set of variables to represent the effect of soil properties on C stocks: clay fraction (<2 $\mu$m), silt fraction (2-50 $\mu$m), sand fraction (50-2000 $\mu$m), pH and cation exchange capacity xx. These edaphic variables were measured on our soil samples analysed in the Cirad laboratories (see section "Field inventories"). After scaling and centering these variables, we performed a principal component analysis: the first component explained `r round(pca_soil$sdev[1]^2/sum(pca_soil$sdev^2)*100)`% of the variance in our data set (Figure S\@ref(fig:choice-soil-vars)b). We therefore decided to retain only one variable to represent this edaphic gradient: clay fraction, which was one of the most highly correlated with the first component of the PCA (Figure S\@ref(fig:choice-soil-vars)b) and has been shown to influence C stocks in other contexts [@Wiesmeier2019]. 
 
 \## Tables
 
@@ -1338,6 +1339,11 @@ flextable(vern) |>
 
 \## Figures
 
+```{r fig.id="design", fig.cap = "Plot sampling design. (a) Typical plot < 1 ha, in all AFS except SPs. (b) Typical 1-ha plot in SPs. Red areas are the five 10x10 m subplots, and blue dots are the three soil sampling locations.", fig.autonum.start_at=1, fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 5, fig.height = 3}
+include_graphics("figures/plot-design.jpg") 
+```
+</br>
+
 ```{r fig.id="seq-diagram", fig.cap = "Typical sequence of AFS in the sites included in this study. Transitions between two systems are represented by arrows: dashed arrows represent transitions that usually include tree removal, whereas solid arrows represent transitions where trees are planted and/or the AFS is left to regenerate naturally. These transitions may vary according to the farmer's strategy and available resources (Cogné and Lescuyer, 2024).", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 8, fig.height = 2.2, out.width="50%"}
 # save_png <- function(plot, path){
 #   DiagrammeRsvg::export_svg(plot) %>%
@@ -1375,11 +1381,6 @@ flextable(vern) |>
 include_graphics("figures/seq_diagram.png") 
 ```
 
-```{r fig.id="design", fig.cap = "Plot sampling design. (a) Typical plot < 1 ha, in all AFS except SPs. (b) Typical 1-ha plot in SPs. Red areas are the five 10x10 m subplots, and blue dots are the three soil sampling locations.", fig.autonum.start_at=1, fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S", fig.width = 5, fig.height = 3}
-include_graphics("figures/plot-design.jpg") 
-```
-
-<!-- </br> -->
 
 <!-- ```{r fig.id="altitude-corg", fig.height = 4, fig.width = 6, fig.lp="supp-fig", fig.cap = "Effect of plot elevation (x-axis; in m) on SOC stocks (y-axis; in\ Mg\ C\ ha^-1^). Points are colored by site; the point corresponds to the mean prediction at that site, while the error bars correspond to the 95% confidence interval. We performed a linear mixed effects regression with log-transformed SOC stocks as the dependent variable, log-transformed elevation as the independent variable, and site as random effect. Results are presented as regression lines and the p-value of the relationship between SOC stocks and elevation.", fig.cap.pre="Figure S"} -->
 <!-- dataC_plot <- read.csv("dataC_plot.csv") |> setDT() -->
@@ -1453,7 +1454,7 @@ include_graphics("figures/plot-design.jpg")
 
 </br>
 
-```{r fig.id = "dag", fig.cap="Direct acyclic plot of the hypothesised effect of soil characteristics, climate and land use (here AFS) on AGC and SOC stocks."}
+```{r fig.id = "dag", fig.cap="Direct acyclic plot of the hypothesised effect of soil characteristics, climate and land use (here AFS) on AGC and SOC stocks.", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S"}
 # save_png <- function(plot, path){
 #   DiagrammeRsvg::export_svg(plot) %>%
 #     charToRaw() %>%
@@ -1491,7 +1492,7 @@ include_graphics("figures/dag.png")
 
 </br>
 
-```{r fig.id="choice-clim-vars", fig.width = 10, fig.height=4, fig.cap=""}
+```{r fig.id="choice-clim-vars", fig.width = 10, fig.height=4, fig.cap="(a) Pearson coefficient of correlation matrix and (b) principal component analysis biplot, with three climate variables: mean annual temperature (MAT), mean annual precipitation (MAP) and precipitation variability (PVar). Values for the climate variables were extracted from CHELSA V2.1 (Karger et al., 2017) for each of the 30 study plots.", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S"}
 g1 <- data_plot[, c("temp", "prec", "varp")] |>
   setnames(c("MAT", "MAP", "Pvar")) |>
   cor() |> melt() |>
@@ -1509,11 +1510,13 @@ g2 <- data_plot[, c("temp", "prec", "varp")] |>
   autoplot(data = data_plot, colour = 'site', loadings.colour = 'black',
          loadings.label = TRUE, loadings.label.col = 'black') +
   theme_classic()
+
 ggpubr::ggarrange(g1, g2, labels = "auto")
 ```
 
+</br>
 
-```{r fig.id = "choice-soil-vars", fig.width = 10, fig.height=4}
+```{r fig.id = "choice-soil-vars", fig.width = 10, fig.height=4, fig.cap="(a) Pearson coefficient of correlation matrix and (b) principal component analysis biplot, with five soil variables: clay, silt and sand fraction, soil pH, and cation exchange capacity (CEC). Values for the soil variables were measured from in situ soil samples for each of the 30 study plots.", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S"}
 g1 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n", "CEC\n")] |>
   setnames(c("clay", "silt", "sand", "pH", "CEC")) |>
   cor() |> melt() |>
