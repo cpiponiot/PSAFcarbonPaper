@@ -207,7 +207,7 @@ data_plot[, `:=`(
   varp = terra::extract(terra::rast("data/CHELSA_bio15_1981-2010_V.2.1.tif"), 
                         cbind(long, lat))[[1]], 
   cwd = terra::extract(terra::rast("data/CWD.tif"), 
-                        cbind(long, lat))[[1]]
+                       cbind(long, lat))[[1]]
 )] 
 
 # extract elevation and rainfall for the 2 sites
@@ -252,7 +252,7 @@ Within each sampling plot, all trees with a circumference at breast height (CBH)
 
 Taxonomic identification was carried out using Tetum (a national official language) vernacular names, which were then linked to scientific names using the iNaturalist and Pl\@ntNet applications, Geoffrey Hull’s monograph [@Hull2006], the “Useful tropical plants” database [@Fern2014] as well as the Australian Northern Territory Government's Native Plants Herbarium [@NT2013]. The correspondence between Tetum names and scientific names is provided in the Supplemental Information (Table S\@ref(tab:tetum-names)).
 
-In each of the 30 sample plots, a composite of three samples was taken from three of the five 10 x 10 m subplots (including the plot center and two opposite corners; Figure S\@ref(fig:design)), covering the intra-plot variability and at a minimum distance of 1 m from any tree. Soils were sampled with a soil auger (Model Bor Tanah - Dormer Standard Soil Auger, Adiguna Karya Persada, Bogor, Indonesia) at 0-10 cm and 20-30 cm depth. As the length of the head auger (15 cm) was longer than our target soil depths (10 cm), we could not accurately sample the 10-20 cm soil layer. Soils samples were then air-dried and sieved at 2 mm. They underwent standard physical and chemical analyses at Cirad laboratories in Montpellier, France (Table S\@ref(tab:site-soil)). Total carbon content was determined by dry combustion, following the ISO 10694:1995 standard method, and measured with a thermal conductive detector (EA 1112 Elemental Analyser, Thermo Fischer Scientific, Netherlands). Carbonate content was determined with a calcimeter, following the ISO 10693 standard method. Soil organic carbon content was calculated as the difference of the total carbon and the carbonate contents. Soil texture (proportion of clay, silt and sand), pH, xxx and CEC were measured as xxx. 
+In each of the 30 sample plots, a composite of three samples was taken from three of the five 10 x 10 m subplots (including the plot center and two opposite corners; Figure S\@ref(fig:design)), covering the intra-plot variability and at a minimum distance of 1 m from any tree. Soils were sampled with a soil auger (Model Bor Tanah - Dormer Standard Soil Auger, Adiguna Karya Persada, Bogor, Indonesia) at 0-10 cm and 20-30 cm depth. As the length of the head auger (15 cm) was longer than our target soil depths (10 cm), we could not accurately sample the 10-20 cm soil layer. Soils samples were then air-dried and sieved at 2 mm. They underwent standard physical and chemical analyses at Cirad laboratories in Montpellier, France (Table S\@ref(tab:site-soil)). Total carbon content was determined by dry combustion, following the ISO 10694:1995 standard method, and measured with a thermal conductive detector (EA 1112 Elemental Analyser, Thermo Fischer Scientific, Netherlands). Carbonate content was determined with a calcimeter, following the ISO 10693 standard method. Soil organic carbon content was calculated as the difference of the total carbon and the carbonate contents. Soil texture (proportion of clay, silt and sand), and pH were measured as xxx. 
 
 In addition, at one location in the center of the plot, three 250 cm$^3$ soil samples were taken with a soil sampling cylinder (5 cm in height, 7.98 cm inner diameter, and 8.4 cm outer diameter; Eijkelkamp Soil & Water, Giesbeek, Netherlands)  at depths of 2-7 cm, 12-17 cm and 22-27 cm.  These depths were chosen to take account of the height of the cylinder (i.e. 5 cm), the destruction of the soil below the cylinder during its extraction, and to be associated with depths 0-10 cm, 10-20 cm and 20-30 cm, the depths at which the organic carbon content was calculated or estimated. Each sample was dried at 105°C in a classic oven until a stable dry mass was reached and then sieved to 2 mm. The fine fraction (\< 2 mm) was weighed to be used in the SOC stocks calculation (equation \@ref(eq:soc)).
 
@@ -961,7 +961,7 @@ timor_map <- map_data("world", region = "Timor-Leste")
 
 g1 = ggplot(timor_map) + 
   annotate(geom = "text", label = "a", x = -Inf, y = Inf, 
-           hjust = 0, vjust = 1, fontface = "bold", size = 6) + 
+           hjust = -3, vjust = 1, size = 5) + 
   geom_polygon(aes(x = long, y = lat, group = group), fill="lightgray", colour = "grey") +
   geom_tile(data = data_box, aes(x = xc, y = yc, width = w, height = w), fill = NA, color = 1, linewidth = 0.5) +
   geom_text_repel(data = data_box, aes(x = xc, y = yc, label = site)) + 
@@ -1000,9 +1000,9 @@ g2 =
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#E6AB02")) +
   labs(x = NULL, y = NULL, color = NULL, fill="Elevation (m)") +
   annotate(geom = "text", label = "b", x = -Inf, y = Inf, 
-           hjust = -0.5, vjust = 1, fontface = "bold", size = 6) + 
+           hjust = -0.5, vjust = 1, size = 5) + 
   annotate(geom = "text", label = "c", x = Inf, y = -Inf, 
-           hjust = 12, vjust = -9.8, fontface = "bold", size = 6) + 
+           hjust = 13.7, vjust = -10.8, size = 5) + 
   guides(color = FALSE, fill=guide_colorbar(title.position = "top")) +
   theme(legend.position = c(0.8, 0.85), legend.direction="horizontal", 
         axis.title = element_blank(),
@@ -1030,39 +1030,60 @@ ggarrange(ggarrange(g1, l1), g2, ncol = 1, heights = c(1,2))
 ## reorder factors 
 dataC_afs_site[, afs := factor(afs, levels = c("CF", "SP", "YA", "HG", "FG"))]
 
-ggplot(dataC_afs_site[variable %in% c("AGC", "BGC", "SOC")], 
-       aes(x = afs, y = mean, fill = variable)) +
-  geom_bar(position="stack", stat="identity") + 
+# add facet letter
+data_letter <- data.frame( 
+  site = c("Gariuai", "Osso-Luga"), 
+  lab = letters[1:2]
+)
+
+dataC_afs_site |> 
+  subset(variable %in% c("AGC", "BGC", "SOC")) |> 
+ggplot(aes(x = afs, y = mean)) +
+  geom_bar(position="stack", stat="identity", aes(fill = variable)) + 
+  geom_text(data = data_letter, x = -Inf, y = Inf, hjust = -1, vjust = 1, 
+            aes(label = lab)) +
   facet_wrap(~site, nrow = 1, strip.position = "bottom") +
   scale_fill_manual(values = c("forestgreen", "darkgoldenrod1", "coral4")) +
   theme_classic() +
-  theme(strip.placement = "outside") +
   labs(x = "", y = expression("Carbon stocks (Mg C"*" "*ha^{-1}*")"), fill = "Carbon\npool") +
-  scale_y_continuous(expand = c(0, 0))
+  scale_y_continuous(expand = c(0, 0)) +
+  theme(strip.background = element_blank(), strip.placement = "outside")
 ```
 
 </br>
 
-```{r fig.id = "effect-afs-site", fig.width = 7, fig.height = 3, fig.cap = "Effect of AFS (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden) and site on carbon stocks (in MgC/ha). These values were obtained as the sum of the mean predicted stocks ($\\mu$) and the AFS or site random effects. The black dot represents the mean of the 1000 iterations; the red segment represents the 80% confidence interval and the black segment represents the 95% confidence interval. AGC: aboveground (biomass) carbon; SOC: soil organic carbon."}
-labels_stock = function(x) paste(toupper(x), "(Mg/ha)")
-labels_effect = function(x) ifelse(x %in% c("afs", "agc"), toupper(x), x)
+```{r fig.id = "effect-afs-site", fig.width = 7, fig.height = 3, fig.cap = "Effect of (a, b) AFS (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden) and (c, d) site (G: Gariuai, OL: Osso-Luga) on (a, c) aboveground carbon (AGC, in Mg C ha$^{-1}$) and (b, d) soil organic carbon (SOC, in Mg C ha$^{-1}$). These values were obtained as the sum of the mean predicted stocks ($\\mu$) and the AFS or site random effects. The black dot represents the mean of the 1000 iterations; the red segment represents the 80% confidence interval and the black segment represents the 95% confidence interval."}
+labels_stock <- function(x) paste0(toupper(x), "~(Mg~C~ha^-1)")
+labels_effect <- function(x) ifelse(x=="afs", toupper(x), x)
+
+# add facet letter
+data_letter <- data.frame(
+  stock = rep(c("agc", "soc"), 2), 
+  effect = rep(c("afs", "site"), each = 2), 
+  lab = letters[1:4]
+)
+
+# keep only sites' initials to simplify figure
+initials <- function(x) gsub("(?<=[A-Z])[^A-Z]+", "", x, perl = TRUE)
 
 pars_summary |> 
   subset(param == "pred_med" & stock != "soc10") |> 
-  ggplot(aes(y = level)) + 
+  ggplot(aes(y = initials(level))) + 
   geom_segment(aes(x = low95, xend = upp95)) + 
   geom_segment(aes(x = low80, xend = upp80), col = 2, lwd = 3) + 
   geom_point(aes(x = mean), size = 2) +
+  geom_text(data = data_letter, x = -Inf, y = Inf, hjust = -1, vjust = 1, col = 1, aes(label = lab)) +
   facet_grid(
-    effect ~ stock, scales = "free", 
-    labeller = labeller(stock = labels_stock, effect = labels_effect)) +
+    labels_effect(effect) ~ labels_stock(stock), 
+    scales = "free", switch = "both", labeller = label_parsed) +
   labs(x=NULL, y = NULL) +
-  theme_bw()
+  theme_bw() +
+  theme(strip.background = element_blank(), strip.placement = "outside")
 ```
 
 ```{r fig.id = "effect-agc-clay", fig.width = 7, fig.height = 2, fig.cap = "Effect of covariates (MAT: mean annual temperature, Clay: clay fraction, AGC: aboveground carbon) on carbon stocks (SOC: soil organic carbon, at 0-10 cm or 0-30 cm depth). Covariates are all centred and scaled; positive values indicate that C stocks tend to be higher for higher values of the covariate. Black dots represent the mean of the 1000 iterations; red segments represent 80% confidence intervals and black segments represent 95% confidence intervals."}
 labels_stock = function(x)
-  ifelse(x=="agc", "AGC", ifelse(grepl("10", x), "SOC (0-10 cm)", "SOC (0-30 cm)"))
+  ifelse(x=="agc", "a. AGC", ifelse(grepl("10", x), "c. SOC (0-10 cm)", "b. SOC (0-30 cm)"))
 
 pars_summary |> 
   subset(param == "theta")  |> 
@@ -1074,10 +1095,11 @@ pars_summary |>
   facet_wrap(~stock, labeller = labeller(stock = labels_stock)) + 
   labs(x="Effect of covariates on C stocks", y = NULL) +
   scale_y_discrete(labels= c("AGC", "Clay", "MAT")) +
-  theme_bw()
+  theme_bw() +
+  theme(strip.text = element_text(hjust = 0, size = 10), strip.background = element_blank())
 ```
 
-```{r fig.id = "plot-reg", fig.height = 3.5, fig.width = 7, fig.cap = "Scatter plot of aboveground carbon (AGC; x-axis) and soil organic carbon (SOC; y-axis) stocks. SOC stocks were estimated at the topsoil layer (0-10 cm; left panel) and at the total measured depth (0-30 cm; right panel). Each point represents the mean SOC stocks in a sample plot, and the vertical and horizontal error bars are the 95% confidence intervals. The colours correspond to the different agroforestry systems (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden); the different shapes represent the two sites. The dotted lines represent the mean predicted SOC stocks for a given AGC stock value, and the grey areas represent the 95% confidence interval of this prediction."}
+```{r fig.id = "plot-reg", fig.height = 3.5, fig.width = 7, fig.cap = "Scatter plot of aboveground carbon (AGC; x-axis) and soil organic carbon (SOC; y-axis) stocks, (a) at the total measured depth (0-30 cm) and (b) at the topsoil layer (0-10 cm). Each point represents the mean SOC stocks in a sample plot, and the vertical and horizontal error bars are the 95% confidence intervals. The colours correspond to the different agroforestry systems (CF: crop and fallow, SP: silvopasture, YA: young agroforest, HG: home garden, FG: forest garden); the different shapes represent the two sites (round: Gariuai, triangle: Osso-Luga). The dotted lines represent the mean predicted SOC stocks for a given AGC stock value, and the grey areas represent the 95% confidence interval of this prediction."}
 
 dfpred <- expand.grid(agc = seq(0, 170, length.out = 20), 
                       iter = unique(data_par$iter)
@@ -1096,21 +1118,23 @@ dfpred <- dfpred[, .(
   lower = quantile(pred, 0.025), 
   upper = quantile(pred, 0.975)
 ), .(agc, stock)]
-dfpred[, depth := ifelse(grepl(10, stock), 
-                         "Soil depth: 0-10 cm", "Soil depth: 0-30 cm")]
 
 # # stack data for figure
 dataC_30 <- dataC_plot[variable %in% c("AGC", "SOC")] |> 
   dcast(plot + site + afs ~ variable, value.var = c("mean", "lwr", "upr"))
-dataC_30$depth <- "Soil depth: 0-30 cm"
+dataC_30$stock <- "soc"
 dataC_10 <- dataC_plot[variable %in% c("AGC", "SOC10")] |> 
   dcast(plot + site + afs ~ variable, value.var = c("mean", "lwr", "upr"))
 colnames(dataC_10) <- gsub("SOC10", "SOC", colnames(dataC_10))
-dataC_10$depth <- "Soil depth: 0-10 cm"
+dataC_10$stock <- "soc10"
 dataC_fig <- rbind(dataC_10, dataC_30)
 
 ## reorder factors 
 dataC_fig[, afs := factor(afs, levels = c("CF", "SP", "YA", "HG", "FG"))]
+
+# create strip labels
+labels_depth <-
+  function(x) ifelse(grepl(10, x), "b. SOC (0-10 cm)", "a. SOC (0-30 cm)")
 
 ## figure
 ggplot(dataC_fig, aes(color = afs)) +
@@ -1124,8 +1148,11 @@ ggplot(dataC_fig, aes(color = afs)) +
        y = expression("SOC stocks (Mg C"*" "*ha^{-1}*")"), shape = "Site") +
   expand_limits(x = 0, y = 0) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#E6AB02")) +
-  facet_wrap(~depth) +
-  theme_classic()
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  facet_wrap(~stock, labeller = labeller(stock = labels_depth)) + 
+  theme_classic() +
+  theme(strip.text = element_text(hjust = 0, size = 11), strip.background = element_blank())
 ```
 
 # References
@@ -1508,7 +1535,7 @@ g2 <- data_plot[, c("temp", "prec", "varp")] |>
   scale() |>
   princomp() |>
   autoplot(data = data_plot, colour = 'site', loadings.colour = 'black',
-         loadings.label = TRUE, loadings.label.col = 'black') +
+           loadings.label = TRUE, loadings.label.col = 'black') +
   theme_classic()
 
 ggpubr::ggarrange(g1, g2, labels = "auto")
@@ -1516,9 +1543,9 @@ ggpubr::ggarrange(g1, g2, labels = "auto")
 
 </br>
 
-```{r fig.id = "choice-soil-vars", fig.width = 10, fig.height=4, fig.cap="(a) Pearson coefficient of correlation matrix and (b) principal component analysis biplot, with five soil variables: clay, silt and sand fraction, soil pH, and cation exchange capacity (CEC). Values for the soil variables were measured from in situ soil samples for each of the 30 study plots.", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S"}
-g1 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n", "CEC\n")] |>
-  setnames(c("clay", "silt", "sand", "pH", "CEC")) |>
+```{r fig.id = "choice-soil-vars", fig.width = 10, fig.height=4, fig.cap="(a) Pearson coefficient of correlation matrix and (b) principal component analysis biplot, with four soil variables: clay, silt and sand fraction, and soil pH. Values for the soil variables were measured from in situ soil samples for each of the 30 study plots.", fig.lp="supp-fig", results = "show", fig.cap.pre="Figure S"}
+g1 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n")] |>
+  setnames(c("clay", "silt", "sand", "pH")) |>
   cor() |> melt() |>
   ggplot(aes(x = Var1, y = Var2, label = round(value, 2), fill = value)) +
   geom_tile() +
@@ -1527,12 +1554,12 @@ g1 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n", "CEC\n")] |>
   theme_bw() +
   labs(x = NULL, y = NULL, fill = "Pearson\nCorrelation\nCoefficient")
 
-g2 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n", "CEC\n")] |>
-  setnames(c("clay", "silt", "sand", "pH", "CEC")) |>
+g2 <- data_soil_melt[, c("CLAY", "silt", "sand", "pH\n")] |>
+  setnames(c("clay", "silt", "sand", "pH")) |>
   scale() |>
   princomp() |>
   autoplot(data = data_plot, colour = 'site', loadings.colour = 'black',
-         loadings.label = TRUE, loadings.label.col = 'black') +
+           loadings.label = TRUE, loadings.label.col = 'black') +
   theme_classic()
 ggpubr::ggarrange(g1, g2, labels = "auto")
 ```
