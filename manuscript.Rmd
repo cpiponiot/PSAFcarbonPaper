@@ -414,15 +414,6 @@ Belowground carbon (BGC) stocks were estimated at tree level using the root-to-s
 ```{r bgc-estimation}
 # root-to-shoot ratio allometry from Ledo et al., 2018
 # use CWD values from Chave et al., 2014
-# download from figshare https://figshare.com/articles/dataset/Root_Shoot_global_data_individual_trees/5144164?file=8754550
-# rs <- readxl::read_excel("C:/Users/piponiot-laroche/Downloads/S1Database.xlsx",
-#                          sheet = "DATA")
-# rs$BGB_kg <- as.numeric(rs$BGB_kg)
-# rs$wd <- as.numeric(rs$wd)
-# rs$dbh2 <- rs$DBH_cm^2
-# lm(log(BGB_kg/AGB_kg) ~ DBH_cm + dbh2 + wd,
-#    data = subset(rs, !is.na(BGB_kg) & BGB_kg != 0))
-
 data_sim_agc[, RS := exp(-1.2312 - 0.0215 * DIAM_130_CM +
   0.0002 * DIAM_130_CM^2 - 0.0007 * cwd)]
 data_sim_agc[, BGC := RS * AGC]
@@ -482,17 +473,6 @@ data_sim_empty <- expand.grid(
   merge(data_plot[, c("N_PLOT", "ID_VILLAGE", "ID_AF")])
 data_sim_empty$value <- 0
 
-# limit of detectability: tree of 30 cm CBH, mean WD and height (for this DBH)
-# LOD = computeAGB(D = 30/pi,
-#                  WD = unique(data_wd$meanWD[data_wd$genus=="NR"]),
-#                  H = data_tree[DIAM_130_CM == 30/pi, mean(HEIGHT)])
-# data_sim_empty[iter != "mean", AGC := runif(sum(iter != "mean"), 0, LOD)]
-# data_sim_empty[iter == "mean", AGC := LOD/2]
-# RS = mean(data_sim_agc$RS[data_sim_agc$DIAM_130_CM==30/pi])
-# data_sim_empty[, BGC := AGC * RS]
-
-# data_sim_empty = melt(data_sim_empty, measure.vars = c("AGC", "BGC"))
-
 data_sim <- rbind(data_sim[, colnames(data_sim_empty), with = FALSE], data_sim_empty)
 ```
 
@@ -543,7 +523,9 @@ setDT(data_soil)
 ```{r add-missing-values}
 data_soil[, Corg := `Corg\n`]
 ## add intermediate soil carbon in 10-20 cm depth under the assumption of an
-# organic carbon content that decreases as a negative exponential of depth, we can deduce the carbon content at 10-20 cm with the following function: SOC[10-20] = SOC[0-10]*sqrt(SOC[20-30]/SOC[0-10])
+# organic carbon content that decreases as a negative exponential of depth, 
+# we can deduce the carbon content at 10-20 cm with the following function: 
+# SOC[10-20] = SOC[0-10]*sqrt(SOC[20-30]/SOC[0-10])
 data_soil <- merge(
   data_soil,
   data_soil[
@@ -564,8 +546,10 @@ data_soil[, c("h0", "h1") := lapply(tstrsplit(SAMPLE_DEPTH, "-"), as.numeric)]
 ## error propagation using a Monte Carlo method -------------
 data_sim_soil <- data_soil[
   , .(
-    mfine = c(Sample_DRY, rnorm(1000, Sample_DRY, Sample_DRY * 0.1)), # 10% error on fine soil mass
-    Corg = c(Corg, rnorm(1000, Corg, Corg * 0.12)), # 12% error on C content measurement
+    # 10% error on fine soil mass
+    mfine = c(Sample_DRY, rnorm(1000, Sample_DRY, Sample_DRY * 0.1)), 
+    # 12% error on C content measurement
+    Corg = c(Corg, rnorm(1000, Corg, Corg * 0.12)), 
     iter = c("mean", paste0("V", 1:1000))
   ),
   .(N_PLOT, SAMPLE_DEPTH, h1, h0)
@@ -1144,27 +1128,6 @@ data.frame(
   flextable(cwidth = c(1, 2))
 ```
 
-
-
-<!-- ```{r tab.id = "anova", results = "show", tab.cap = "Results of the two 2-way ANOVAs with log-transformed median AGC and SOC as dependent variables, and AFS and site as independent variables. The p-value gives the probability of the means of the categories of each independent variable being the same. Bold p-values are lower than 0.05, and the mean difference between groups is thus considered significantly different than zero."} -->
-
-<!-- anova_table$factor = factor(anova_table$factor) -->
-
-<!-- levels(anova_table$factor) = c("AFS", "site") -->
-
-<!-- flextable(anova_table, col_keys = c("variable", "factor", "pvalue"),  -->
-
-<!--           cwidth = c(1, 1, 0.8)) |>  -->
-
-<!--   bold(i = anova_table$pvalue < 0.05, j = 2:3) |>  -->
-
-<!--   set_header_labels(values = c("Dependent variable", "Independent variable", "p-value")) |>  -->
-
-<!--   merge_at(i = 1:2, j = 1) |> merge_at(i = 3:4, j = 1) |>  -->
-
-<!--   fix_border_issues() |> hline(i=2) -->
-
-<!-- ``` -->
 
 \newpage
 
