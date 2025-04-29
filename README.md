@@ -1,7 +1,7 @@
 This repository contains the codes to download and analyse the data published in Piponiot et al. 2025. "Traditional agroforestry systems in Timor-Leste can store large amounts of carbon in both soil and biomass".
 It contains the following files and folders
 
-- **manuscript.qmd**: this is the main file that downloads the datasets, analyses them and produces the figures, tables and text in the published manuscript.
+- **manuscript.rmd**: this is the main file that downloads the datasets, analyses them and produces the figures, tables and text in the published manuscript.
 
 - **references.bib** contains the references cited in manuscript.qmd
 
